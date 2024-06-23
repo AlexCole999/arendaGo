@@ -1,0 +1,195 @@
+const express = require('express');
+const mongoose = require('mongoose');
+
+const adsensesRoutes = express.Router();
+
+let Adsenses;
+try {
+  Adsenses = mongoose.model('Adsenses');
+} catch (e) {
+  Adsenses = mongoose.model('Adsenses', {
+    user: String,
+    category: String,
+    city: String,
+    district: String,
+    phone: String,
+    address: String,
+    workhours: String,
+    servicesList: [
+      {
+        hours: String,
+        price: Number
+      }
+    ],
+    imagesList: [String],
+    description: String,
+    testimonials: [
+      {
+        text: String,
+        rating: Number
+      }
+    ],
+    createdAt: Number,
+    orders: [
+      {
+        adId: String,
+        date: Date,
+        duration: String,
+        bookingTime: String,
+        userPhone: String,
+        userName: String,
+        status: {
+          type: String,
+          default: 'waiting for approve'
+        },
+        createdAt: Number
+      }
+    ]
+  });
+}
+
+adsensesRoutes.get('/adsensesMainScreen', async (req, res) => {
+  try {
+    // Получение объявлений, отсортированных по createdAt
+    const adsensesSortedByCreatedAt = await Adsenses.find({})
+      .sort({ createdAt: -1 }) // Сортируем по createdAt по убыванию
+      .limit(10); // Ограничиваем результат 8 объявлениями
+
+    // Получение объявлений, отсортированных по rating из testimonials
+    const adsensesSortedByRating = await Adsenses.aggregate([
+      { $unwind: "$testimonials" }, // Разворачиваем массив testimonials
+      {
+        $group: {
+          _id: "$_id",
+          user: { $first: "$user" },
+          category: { $first: "$category" },
+          city: { $first: "$city" },
+          district: { $first: "$district" },
+          phone: { $first: "$phone" },
+          address: { $first: "$address" },
+          workhours: { $first: "$workhours" },
+          servicesList: { $first: "$servicesList" },
+          imagesList: { $first: "$imagesList" },
+          description: { $first: "$description" },
+          testimonials: { $push: "$testimonials" },
+          createdAt: { $first: "$createdAt" },
+          averageRating: { $avg: "$testimonials.rating" } // Рассчитываем среднее значение rating
+        }
+      },
+      { $sort: { averageRating: -1 } }, // Сортируем по среднему значению rating по убыванию
+      { $limit: 12 } // Ограничиваем результат 12 объявлениями
+    ]);
+
+    res.json({
+      adsensesSortedByCreatedAt: adsensesSortedByCreatedAt,
+      adsensesSortedByRating: adsensesSortedByRating
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Ошибка сервера', error });
+  }
+});
+
+adsensesRoutes.get('/adsenses', async (req, res) => {
+  const page = parseInt(req.query.page) || 1; // Получаем номер страницы из параметра запроса или используем 1 по умолчанию
+  const pageSize = 20; // Размер страницы - 20 объявлений
+
+  try {
+    const adsenses = await Adsenses.find({})
+      .skip((page - 1) * pageSize) // Пропускаем объявления на предыдущих страницах
+      .limit(pageSize); // Ограничиваем количество объявлений на текущей странице
+
+    console.log(`Получены объявления со страницы ${page} из базы данных:`, adsenses);
+    res.json(adsenses);
+  } catch (err) {
+    console.error('Ошибка при получении объявлений из базы данных:', err);
+    res.status(500).json({ message: 'Ошибка при получении объявлений из базы данных' });
+  }
+});
+
+adsensesRoutes.post('/newAdsense', async (req, res) => {
+
+  const { user, category, city, district, phone, address, workhours, services, servicesList, imagesList, description } = req.body;
+  try {
+    const currentDate = new Date();
+    const createdAt = currentDate.getTime()
+    const newAdsense = new Adsenses({ user, category, city, district, phone, address, workhours, services, servicesList, imagesList, description, createdAt });
+    await newAdsense.save();
+
+    // const result = await Adsenses.find({ _id: adnsenseId }).exec()
+
+    res.status(201).json({ adsenseId: newAdsense.id });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+    console.log(err)
+  }
+
+});
+
+adsensesRoutes.post('/updateAdsense', async (req, res) => {
+  const { id, category, city, district, phone, address, workhours, servicesList, description } = req.body;
+
+  try {
+    const updatedAdsense = await Adsenses.findByIdAndUpdate(
+      id,
+      {
+        category,
+        city,
+        district,
+        phone,
+        address,
+        workhours,
+        servicesList,
+        description
+      },
+      { new: true } // Опция для возврата обновленного документа
+    );
+
+    if (!updatedAdsense) {
+      return res.status(404).json({ status: 'error', message: 'Объявление не найдено' });
+    }
+    res.status(200).json({ status: 'success', data: updatedAdsense });
+  } catch (error) {
+    console.error('Ошибка при обновлении объявления:', error);
+    res.status(500).json({ status: 'error', message: 'Ошибка сервера' });
+  }
+
+});
+
+adsensesRoutes.post('/deleteAdsense', async (req, res) => {
+  const { id } = req.body;
+
+  try {
+    const deletedAdsense = await Adsenses.findByIdAndDelete(id);
+    if (!deletedAdsense) {
+      return res.status(404).json({ status: 'error', message: 'Объявление не найдено' });
+    }
+
+    res.status(200).json({ status: 'success', message: 'Объявление успешно удалено' });
+  } catch (error) {
+    console.error('Ошибка при удалении объявления:', error);
+    res.status(500).json({ status: 'error', message: 'Ошибка сервера' });
+  }
+});
+
+adsensesRoutes.post('/newAdsenseTestimonial', async (req, res) => {
+  const { adId, rating, text } = req.body;
+
+  try {
+    const updatedAdsense = await Adsenses.findOneAndUpdate(
+      { _id: adId },
+      { $push: { testimonials: { rating, text } } },
+      { new: true }
+    );
+
+    if (!updatedAdsense) {
+      return res.status(404).json({ status: 'error', message: 'Adsense not found' });
+    }
+
+    res.status(201).json({ status: 'success', data: updatedAdsense });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ status: 'error', message: 'Server error' });
+  }
+});
+
+module.exports = adsensesRoutes;

@@ -1,0 +1,26 @@
+# Node modules
+node_modules/
+uploads/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Dependency directories
+bower_components/
+jspm_packages/
+
+# Distribution directories
+dist/
+out/
+
+# OS generated files
+.DS_Store
+Thumbs.db
