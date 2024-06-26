@@ -90,15 +90,48 @@ adsensesRoutes.get('/adsensesMainScreen', async (req, res) => {
 });
 
 adsensesRoutes.get('/adsenses', async (req, res) => {
+
   const page = parseInt(req.query.page) || 1; // Получаем номер страницы из параметра запроса или используем 1 по умолчанию
+
   const pageSize = 20; // Размер страницы - 20 объявлений
 
+  console.log(req.query)
+
   try {
-    const adsenses = await Adsenses.find({})
+    const query = {};
+
+    if (req.query.city) {
+      query.city = req.query.city;
+    }
+
+    if (req.query.category) {
+      if (req.query.category === 'Косметология') {
+        query.category = {
+          $in: [
+            'Эстетическая косметология',
+            'Аппаратная косметология',
+            'Инъекционная косметология',
+            'Депиляция, шугаринг',
+            'Перманентный макияж'
+          ]
+        };
+      } else if (req.query.category === 'Стилисты') {
+        query.category = {
+          $in: [
+            'Стилисты по волосам',
+            'Визаж',
+            'Барбершоп'
+          ]
+        };
+      } else {
+        query.category = req.query.category;
+      }
+    }
+
+    const adsenses = await Adsenses.find(query)
       .skip((page - 1) * pageSize) // Пропускаем объявления на предыдущих страницах
       .limit(pageSize); // Ограничиваем количество объявлений на текущей странице
 
-    console.log(`Получены объявления со страницы ${page} из базы данных:`, adsenses);
     res.json(adsenses);
   } catch (err) {
     console.error('Ошибка при получении объявлений из базы данных:', err);
