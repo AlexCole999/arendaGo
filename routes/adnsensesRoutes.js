@@ -18,7 +18,8 @@ try {
     servicesList: [
       {
         hours: String,
-        price: Number
+        price: Number,
+        fiat: String
       }
     ],
     imagesList: [String],
@@ -126,6 +127,25 @@ adsensesRoutes.get('/adsenses', async (req, res) => {
       } else {
         query.category = req.query.category;
       }
+    }
+
+    if (req.query.priceFrom && req.query.priceTo) {
+      query['servicesList.price'] = {
+        $gte: parseInt(req.query.priceFrom),
+        $lte: parseInt(req.query.priceTo)
+      };
+    } else if (req.query.priceFrom) {
+      query['servicesList.price'] = {
+        $gte: parseInt(req.query.priceFrom)
+      };
+    } else if (req.query.priceTo) {
+      query['servicesList.price'] = {
+        $lte: parseInt(req.query.priceTo)
+      };
+    }
+
+    if (req.query.currency) {
+      query['servicesList.fiat'] = req.query.currency;
     }
 
     const adsenses = await Adsenses.find(query)

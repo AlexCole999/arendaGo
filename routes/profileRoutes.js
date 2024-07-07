@@ -44,7 +44,8 @@ try {
     servicesList: [
       {
         hours: String,
-        price: Number
+        price: Number,
+        fiat: String
       }
     ],
     imagesList: [String],
