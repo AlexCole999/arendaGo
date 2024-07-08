@@ -105,7 +105,13 @@ adsensesRoutes.get('/adsenses', async (req, res) => {
       query.city = req.query.city;
     }
 
-    if (req.query.category) {
+    if (req.query.district) {
+      query.district = req.query.district;
+    }
+
+    if (req.query.subcategory) {
+      query.category = req.query.subcategory;
+    } else if (req.query.category) {
       if (req.query.category === 'Косметология') {
         query.category = {
           $in: [
@@ -128,6 +134,7 @@ adsensesRoutes.get('/adsenses', async (req, res) => {
         query.category = req.query.category;
       }
     }
+
 
     if (req.query.priceFrom && req.query.priceTo) {
       query['servicesList.price'] = {
