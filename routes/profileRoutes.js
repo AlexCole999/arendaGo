@@ -36,6 +36,7 @@ try {
 } catch (e) {
   Adsenses = mongoose.model('Adsenses', {
     user: String,
+    title: String,
     category: String,
     city: String,
     district: String,
@@ -51,6 +52,9 @@ try {
     ],
     imagesList: [String],
     description: String,
+    instagram: String,
+    telegram: String,
+    whatsapp: String,
     testimonials: [
       {
         text: String,

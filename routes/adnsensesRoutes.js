@@ -55,6 +55,7 @@ try {
 
 adsensesRoutes.get('/adsensesMainScreen', async (req, res) => {
   try {
+
     // Получение объявлений, отсортированных по createdAt
     const adsensesSortedByCreatedAt = await Adsenses.find({})
       .sort({ createdAt: -1 }) // Сортируем по createdAt по убыванию
@@ -67,7 +68,7 @@ adsensesRoutes.get('/adsensesMainScreen', async (req, res) => {
         $group: {
           _id: "$_id",
           user: { $first: "$user" },
-          title: { $title: "$title" },
+          title: { $first: "$title" },
           category: { $first: "$category" },
           city: { $first: "$city" },
           district: { $first: "$district" },
@@ -77,6 +78,9 @@ adsensesRoutes.get('/adsensesMainScreen', async (req, res) => {
           servicesList: { $first: "$servicesList" },
           imagesList: { $first: "$imagesList" },
           description: { $first: "$description" },
+          instagram: { $first: "$instagram" }, // Добавляем instagram
+          telegram: { $first: "$telegram" },   // Добавляем telegram
+          whatsapp: { $first: "$whatsapp" },     // Добавляем whatsapp
           testimonials: { $push: "$testimonials" },
           createdAt: { $first: "$createdAt" },
           averageRating: { $avg: "$testimonials.rating" } // Рассчитываем среднее значение rating
@@ -85,6 +89,8 @@ adsensesRoutes.get('/adsensesMainScreen', async (req, res) => {
       { $sort: { averageRating: -1 } }, // Сортируем по среднему значению rating по убыванию
       { $limit: 12 } // Ограничиваем результат 12 объявлениями
     ]);
+
+    console.log(adsensesSortedByRating)
 
     res.json({
       adsensesSortedByCreatedAt: adsensesSortedByCreatedAt,
