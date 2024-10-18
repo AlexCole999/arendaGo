@@ -9,6 +9,7 @@ try {
 } catch (e) {
   Adsenses = mongoose.model('Adsenses', {
     user: String,
+    title: String,
     category: String,
     city: String,
     district: String,
@@ -24,6 +25,9 @@ try {
     ],
     imagesList: [String],
     description: String,
+    instagram: String,
+    telegram: String,
+    whatsapp: String,
     testimonials: [
       {
         text: String,
@@ -63,6 +67,7 @@ adsensesRoutes.get('/adsensesMainScreen', async (req, res) => {
         $group: {
           _id: "$_id",
           user: { $first: "$user" },
+          title: { $title: "$title" },
           category: { $first: "$category" },
           city: { $first: "$city" },
           district: { $first: "$district" },
@@ -168,11 +173,11 @@ adsensesRoutes.get('/adsenses', async (req, res) => {
 
 adsensesRoutes.post('/newAdsense', async (req, res) => {
 
-  const { user, category, city, district, phone, address, workhours, services, servicesList, imagesList, description } = req.body;
+  const { user, title, category, city, district, phone, address, workhours, services, servicesList, imagesList, description, instagram, telegram, whatsapp } = req.body;
   try {
     const currentDate = new Date();
     const createdAt = currentDate.getTime()
-    const newAdsense = new Adsenses({ user, category, city, district, phone, address, workhours, services, servicesList, imagesList, description, createdAt });
+    const newAdsense = new Adsenses({ user, title, category, city, district, phone, address, workhours, services, servicesList, imagesList, description, instagram, telegram, whatsapp, createdAt });
     await newAdsense.save();
 
     // const result = await Adsenses.find({ _id: adnsenseId }).exec()
@@ -186,12 +191,13 @@ adsensesRoutes.post('/newAdsense', async (req, res) => {
 });
 
 adsensesRoutes.post('/updateAdsense', async (req, res) => {
-  const { id, category, city, district, phone, address, workhours, servicesList, description } = req.body;
+  const { id, title, category, city, district, phone, address, workhours, servicesList, description } = req.body;
 
   try {
     const updatedAdsense = await Adsenses.findByIdAndUpdate(
       id,
       {
+        title,
         category,
         city,
         district,

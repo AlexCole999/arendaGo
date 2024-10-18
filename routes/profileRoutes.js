@@ -8,6 +8,7 @@ try {
   User = mongoose.model('Users');
 } catch (e) {
   User = mongoose.model('Users', {
+    accType: String,
     name: String,
     phone: String,
     password: String,
@@ -113,9 +114,9 @@ profileRoutes.post('/registrationCheck', async (req, res) => {
 });
 
 profileRoutes.post('/registrationNewUser', async (req, res) => {
-  const { name, phone, password } = req.body;
+  const { accType, name, phone, password } = req.body;
   try {
-    const newUser = new User({ phone, name, password });
+    const newUser = new User({ accType, phone, name, password });
     await newUser.save();
     return res.status(200).json({ user: newUser, registrationResult: 'success' });
   } catch (error) {
