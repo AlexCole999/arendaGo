@@ -9,8 +9,10 @@ try {
 } catch (e) {
   Adsenses = mongoose.model('Adsenses', {
     user: String,
+    accType: String,
     title: String,
     category: String,
+    coworking: String,
     city: String,
     district: String,
     phone: String,
@@ -112,6 +114,14 @@ adsensesRoutes.get('/adsenses', async (req, res) => {
   try {
     const query = {};
 
+    if (req.query.title) {
+      query.title = new RegExp(req.query.title, 'i'); // 'i' делает поиск нечувствительным к регистру
+    }
+
+    if (req.query.coworking) {
+      if (req.query.coworking == 'true') { query.accType = 'Коворкинг' }
+    }
+
     if (req.query.city) {
       query.city = req.query.city;
     }
@@ -179,11 +189,12 @@ adsensesRoutes.get('/adsenses', async (req, res) => {
 
 adsensesRoutes.post('/newAdsense', async (req, res) => {
 
-  const { user, title, category, city, district, phone, address, workhours, services, servicesList, imagesList, description, instagram, telegram, whatsapp } = req.body;
+  const { user, accType, title, category, city, district, phone, address, workhours, services, servicesList, imagesList, description, instagram, telegram, whatsapp } = req.body;
+  console.log(req.body)
   try {
     const currentDate = new Date();
     const createdAt = currentDate.getTime()
-    const newAdsense = new Adsenses({ user, title, category, city, district, phone, address, workhours, services, servicesList, imagesList, description, instagram, telegram, whatsapp, createdAt });
+    const newAdsense = new Adsenses({ user, accType, title, category, city, district, phone, address, workhours, services, servicesList, imagesList, description, instagram, telegram, whatsapp, createdAt });
     await newAdsense.save();
 
     // const result = await Adsenses.find({ _id: adnsenseId }).exec()

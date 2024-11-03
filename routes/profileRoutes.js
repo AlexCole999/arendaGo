@@ -20,13 +20,11 @@ try {
         bookingTime: String,
         userPhone: String,
         userName: String,
-        status: {
-          type: String,
-          default: 'waiting for approve'
-        },
+        status: { type: String, default: 'waiting for approve' },
         createdAt: Number
       }
-    ]
+    ],
+    favorites: [{ adId: String }]
   });
 }
 
@@ -36,6 +34,7 @@ try {
 } catch (e) {
   Adsenses = mongoose.model('Adsenses', {
     user: String,
+    accType: String,
     title: String,
     category: String,
     city: String,
