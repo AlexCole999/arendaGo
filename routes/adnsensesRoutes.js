@@ -1,6 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const { User, Adsenses } = require('../models/models.js');
+const { User, Adsenses, Order } = require('../models/models.js');
 
 const adsensesRoutes = express.Router();
 
@@ -214,16 +214,32 @@ adsensesRoutes.post('/updateAdsense', async (req, res) => {
 adsensesRoutes.post('/deleteAdsense', async (req, res) => {
   const { id } = req.body;
 
+  // const ad = await Adsenses.findOne({ _id: id });
+  // const orders = await Order.find({ adId: id })
+
   try {
-    const deletedAdsense = await Adsenses.findByIdAndDelete(id);
-    if (!deletedAdsense) {
-      return res.status(404).json({ status: 'error', message: 'Объявление не найдено' });
+    // Находим все заказы, связанные с этим объявлением
+    const ordersToDelete = await Order.deleteMany({ adId: id });
+
+    // Если заказы были найдены и удалены
+    if (ordersToDelete.deletedCount > 0) {
+      console.log(`${ordersToDelete.deletedCount} заказов удалено`);
+    } else {
+      console.log('Заказы не найдены');
     }
 
-    res.status(200).json({ status: 'success', message: 'Объявление успешно удалено' });
-  } catch (error) {
-    console.error('Ошибка при удалении объявления:', error);
-    res.status(500).json({ status: 'error', message: 'Ошибка сервера' });
+    // Удаляем само объявление
+    const deletedAdsense = await Adsenses.findByIdAndDelete(id);
+
+    if (!deletedAdsense) {
+      return res.status(404).json({ message: 'Объявление не найдено' });
+    }
+
+    return res.status(200).json({ message: 'Объявление и все связанные с ним заказы успешно удалены' });
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Ошибка при удалении объявления и заказов' });
   }
 });
 
