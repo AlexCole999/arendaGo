@@ -1,59 +1,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const { User, Adsenses } = require('../models/models.js');
 
 const adsensesRoutes = express.Router();
-
-let Adsenses;
-try {
-  Adsenses = mongoose.model('Adsenses');
-} catch (e) {
-  Adsenses = mongoose.model('Adsenses', {
-    user: String,
-    accType: String,
-    title: String,
-    category: String,
-    coworking: String,
-    city: String,
-    district: String,
-    phone: String,
-    address: String,
-    workhours: String,
-    servicesList: [
-      {
-        hours: String,
-        price: Number,
-        fiat: String
-      }
-    ],
-    imagesList: [String],
-    description: String,
-    instagram: String,
-    telegram: String,
-    whatsapp: String,
-    testimonials: [
-      {
-        text: String,
-        rating: Number
-      }
-    ],
-    createdAt: Number,
-    orders: [
-      {
-        adId: String,
-        date: Date,
-        duration: String,
-        bookingTime: String,
-        userPhone: String,
-        userName: String,
-        status: {
-          type: String,
-          default: 'waiting for approve'
-        },
-        createdAt: Number
-      }
-    ]
-  });
-}
 
 adsensesRoutes.get('/adsensesMainScreen', async (req, res) => {
   try {
@@ -80,7 +29,7 @@ adsensesRoutes.get('/adsensesMainScreen', async (req, res) => {
           servicesList: { $first: "$servicesList" },
           imagesList: { $first: "$imagesList" },
           description: { $first: "$description" },
-          instagram: { $first: "$instagram" }, // Добавляем instagram
+          instagram: { $first: "$instagram" }, // Добавляем 
           telegram: { $first: "$telegram" },   // Добавляем telegram
           whatsapp: { $first: "$whatsapp" },     // Добавляем whatsapp
           testimonials: { $push: "$testimonials" },
@@ -205,6 +154,30 @@ adsensesRoutes.post('/newAdsense', async (req, res) => {
     console.log(err)
   }
 
+});
+
+adsensesRoutes.post('/getAdsensesById', async (req, res) => {
+  const { adIds } = req.body; // Получаем массив adId из тела запроса
+
+  console.log(adIds)
+
+  if (!Array.isArray(adIds) || adIds.length === 0) {
+    return res.status(400).json({ message: 'adIds must be a non-empty array' });
+  }
+
+  try {
+    // Находим объявления по переданным adId
+    const ads = await Adsenses.find({ '_id': { $in: adIds } });
+
+    if (ads.length === 0) {
+      return res.status(404).json({ message: 'No ads found for the provided adIds' });
+    }
+
+    return res.status(200).json(ads);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'An error occurred while fetching ads' });
+  }
 });
 
 adsensesRoutes.post('/updateAdsense', async (req, res) => {

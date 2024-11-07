@@ -6,10 +6,12 @@ const app = express();
 const adsensesRoutes = require('./routes/adnsensesRoutes');
 const ImageUploadingRoutes = require('./routes/ImageUploadingRoutes');
 const profileRoutes = require('./routes/profileRoutes');
+const orderRoutes = require('./routes/orderRoutes.js');
 app.use(bodyParser.json());
 app.use(adsensesRoutes);
 app.use(ImageUploadingRoutes);
 app.use(profileRoutes);
+app.use(orderRoutes);
 
 app.use(express.static('uploads'));//директория с отдачей файлов
 app.use(express.static('uploadsAdmin'));//директория с отдачей файлов
