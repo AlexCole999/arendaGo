@@ -7,11 +7,24 @@ try {
   User = mongoose.model('Users');
 } catch (e) {
   User = mongoose.model('Users', new mongoose.Schema({
-    accType: String,
-    name: String,
-    phone: String,
-    password: String,
-    favorites: [{ adId: String }]
+    accType: { type: String, default: '' },
+    avatar: { type: String, default: '' },
+    name: { type: String, default: '' },
+    phone: { type: String, default: '' },
+    title: { type: String, default: '' },
+    city: { type: String, default: '' },
+    district: { type: String, default: '' },
+    address: { type: String, default: '' },
+    workdays: { type: String, default: '' },
+    workhours: { type: String, default: '' },
+    instagram: { type: String, default: '' },
+    telegram: { type: String, default: '' },
+    whatsapp: { type: String, default: '' },
+    description: { type: String, default: '' },
+    photos: { type: [String], default: [] },
+    password: { type: String, default: '' },
+    email: { type: String, default: '' },
+    favorites: { type: [{ adId: String }], default: [] }
   }));
 }
 

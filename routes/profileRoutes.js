@@ -4,6 +4,78 @@ const { User, Adsenses, Order } = require('../models/models.js');
 
 const profileRoutes = express.Router();
 
+profileRoutes.post('/registrationNewUser', async (req, res) => {
+  const { accType, name, phone, password } = req.body;
+  try {
+    const existingUser = await User.findOne({ phone });
+    if (existingUser) {
+      console.log('-- tried to registrate existing account with:', accType, name, phone, password, new Date().toISOString());
+      return res.status(200).json({
+        message: 'Такой пользователь уже существует. Нажмите на кнопку "Уже есть аккаунт" под формой регистрации',
+      });
+    } else {
+      const newUser = new User({ accType, phone, name, password });
+      await newUser.save();
+      console.log('++ Registrated account success with:', accType, name, phone, password, new Date().toISOString());
+      return res.status(200).json({ user: newUser, registrationResult: true });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(400).json({ message: 'Ошибка' });
+  }
+})
+
+profileRoutes.post('/userLogIn', async (req, res) => {
+  const { phone, password } = req.body;
+  try {
+    const user = await User.findOne({ phone });
+    if (!user) {
+      console.log('-- tried to login not existing account with:', phone, password, new Date().toISOString());
+      return res.status(200).json({
+        message: 'Пользователь не найден в базе. Нажмите на кнопку "Зарегистрироваться ниже формы"',
+      });
+    }
+    if (user.password === password) {
+      console.log('++ logged in user with correct password:', user._id, new Date().toISOString())
+      return res.status(200).json({ user: user, logInResult: true });
+    } else {
+      console.log('-- not logged in user with wrong password:', user._id, new Date().toISOString())
+      return res.status(200).json({ message: 'Пароль неверный' });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(400).json({ message: 'Ошибка' });
+  }
+});
+
+
+profileRoutes.post('/registrationCheck', async (req, res) => {
+  const { _id } = req.body;
+  try {
+    const user = await User.findOne({ _id });
+    if (!user) {
+      console.log('-- checked registration with not existing _id:', user._id, new Date().toISOString())
+      return res.status(200).json({ checkResult: false });
+    }
+    if (user) {
+      console.log('++ checked registration success with:', user._id, new Date().toISOString())
+      return res.status(200).json({ user: user, checkResult: true });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(400).json({ message: 'Ошибка' });
+  }
+});
+
+
+profileRoutes.post('/changeUserData', async (req, res) => {
+  console.log(req.body);
+  try {
+    return res.status(200).json(req.body);
+  } catch (error) { console.log(error) }
+});
+
+
 profileRoutes.post('/getUserAdsenses', async (req, res) => {
   let user = req?.body?.user ? JSON.parse(req.body.user).phone : 'none'
   try {
@@ -18,38 +90,6 @@ profileRoutes.post('/getUserAdsenses', async (req, res) => {
   } catch (err) {
     console.error("Ошибка при поиске объявлений:", err);
     res.status(500).json({ message: "Ошибка при поиске объявлений" });
-  }
-})
-
-profileRoutes.post('/registrationCheck', async (req, res) => {
-  const { name, phone, password } = req.body;
-  try {
-    const user = await User.findOne({ phone });
-    if (!user) {
-      console.log('Пользователь не найден');
-      return res.status(200).json({
-        message: `Пользователя нет в базе. Хотите зарегистрироваться?`,
-        registrationConfirmation: true
-      });
-    }
-    console.log('Найден пользователь:', user);
-    if (user.password == password) { return res.status(200).json({ user: user, correctPassword: true }); }
-    if (user.password !== password) { return res.status(200).json({ user: user, correctPassword: false }); }
-  } catch (error) {
-    console.error(error);
-    return res.status(400).json({ message: 'Ошибка' });
-  }
-});
-
-profileRoutes.post('/registrationNewUser', async (req, res) => {
-  const { accType, name, phone, password } = req.body;
-  try {
-    const newUser = new User({ accType, phone, name, password });
-    await newUser.save();
-    return res.status(200).json({ user: newUser, registrationResult: 'success' });
-  } catch (error) {
-    console.error(error);
-    return res.status(400).json({ message: 'Ошибка' });
   }
 })
 
