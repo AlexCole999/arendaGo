@@ -1,6 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const { User, Adsenses, Order } = require('../models/models.js');
+const { User, Adsenses, Order, Service } = require('../models/models.js');
 
 const profileRoutes = express.Router();
 
@@ -66,7 +66,6 @@ profileRoutes.post('/registrationCheck', async (req, res) => {
     return res.status(400).json({ message: 'Ошибка' });
   }
 });
-
 
 profileRoutes.post('/changeUserData', async (req, res) => {
   console.log(req.body);
@@ -195,6 +194,65 @@ profileRoutes.post('/getFavoriteAdsenses', async (req, res) => {
   } catch (error) {
     console.error('Ошибка при запросе избранных объявлений:', error);
     return res.status(500).json({ message: 'Ошибка при запросе избранных объявлений' });
+  }
+});
+
+profileRoutes.post('/createNewService', async (req, res) => {
+  const { id, title, category, duration, price, fiat, rules, workers } = req.body;
+  try {
+    const user = await User.findOne({ _id: id });
+
+    if (!user) {
+      return res.status(404).json({ message: 'Пользователь не найден' });
+    }
+
+    const newService = new Service({
+      owner: user._id,
+      title,
+      category,
+      duration,
+      price,
+      fiat,
+      rules,
+      workers
+    });
+
+    await newService.save();
+
+    // Добавляем ID нового сервиса в массив services у пользователя
+    user.services.push(newService._id);
+    await user.save();
+
+    return res.status(201).json({ message: 'Сервис успешно создан', service: newService });
+  } catch (error) {
+    console.error('Ошибка при создании сервиса:', error);
+    return res.status(500).json({ message: 'Ошибка при создании сервиса' });
+  }
+});
+
+profileRoutes.post('/getServicesById', async (req, res) => {
+  console.log(req.body);
+
+  try {
+    let ids = req.body.services; // Получаем ids из тела запроса
+    if (!ids || (Array.isArray(ids) && ids.length === 0)) {
+      return res.status(200).json({ message: 'ID или массив ID обязателен' });
+    }
+
+    // Приводим ids к массиву, если это одно значение
+    const idArray = Array.isArray(ids) ? ids : [ids];
+
+    // Находим записи в MongoDB
+    const services = await Service.find({ _id: { $in: idArray } });
+    // Проверяем, если услуги не найдены
+    if (services.length === 0) {
+      return res.status(200).json({ message: 'Услуги не найдены' });
+    }
+    // Возвращаем найденные услуги
+    return res.status(200).json({ services: services, message: 'Услуги найдены' });
+  } catch (error) {
+    console.error('Ошибка при получении услуг:', error);
+    return res.status(500).json({ message: 'Внутренняя ошибка сервера' });
   }
 });
 

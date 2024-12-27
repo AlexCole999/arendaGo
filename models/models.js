@@ -24,7 +24,26 @@ try {
     photos: { type: [String], default: [] },
     password: { type: String, default: '' },
     email: { type: String, default: '' },
-    favorites: { type: [{ adId: String }], default: [] }
+    favorites: { type: [String], default: [] },
+    workers: { type: [String], default: [] },
+    workAt: { type: [String], default: [] },
+    services: { type: [String], default: [] }
+  }));
+}
+
+let Service;
+try {
+  Service = mongoose.model('Services');
+} catch (e) {
+  Service = mongoose.model('Services', new mongoose.Schema({
+    owner: { type: String, default: '' },
+    title: { type: String, default: '' },
+    category: { type: String, default: '' },
+    duration: { type: String, default: '' },
+    price: { type: String, default: '' },
+    fiat: { type: String, default: '' },
+    rules: { type: String, default: '' },
+    workers: { type: [String], default: [] },
   }));
 }
 
@@ -84,4 +103,4 @@ try {
   }));
 }
 
-module.exports = { User, Adsenses, Order };
+module.exports = { User, Adsenses, Service, Order };
