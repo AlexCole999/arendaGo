@@ -198,11 +198,15 @@ profileRoutes.post('/getFavoriteAdsenses', async (req, res) => {
 });
 
 profileRoutes.post('/createNewService', async (req, res) => {
+
   const { id, title, category, duration, price, fiat, rules, workers } = req.body;
+
   try {
+
     const user = await User.findOne({ _id: id });
 
     if (!user) {
+      console.log('-- tried find user while create new service:', id, new Date().toISOString())
       return res.status(404).json({ message: 'Пользователь не найден' });
     }
 
@@ -216,14 +220,17 @@ profileRoutes.post('/createNewService', async (req, res) => {
       rules,
       workers
     });
-
     await newService.save();
+    console.log('++ created new service with with:', user._id, newService._id, new Date().toISOString())
+
 
     // Добавляем ID нового сервиса в массив services у пользователя
     user.services.push(newService._id);
     await user.save();
+    console.log('++ appended new service to user profile services list:', user._id, newService._id, new Date().toISOString())
 
     return res.status(201).json({ message: 'Сервис успешно создан', service: newService });
+
   } catch (error) {
     console.error('Ошибка при создании сервиса:', error);
     return res.status(500).json({ message: 'Ошибка при создании сервиса' });
@@ -231,11 +238,11 @@ profileRoutes.post('/createNewService', async (req, res) => {
 });
 
 profileRoutes.post('/getServicesById', async (req, res) => {
-  console.log(req.body);
 
   try {
     let ids = req.body.services; // Получаем ids из тела запроса
     if (!ids || (Array.isArray(ids) && ids.length === 0)) {
+      console.log('-- cant see id or ids while getServicesById with: ', ids, new Date().toISOString())
       return res.status(200).json({ message: 'ID или массив ID обязателен' });
     }
 
@@ -246,14 +253,17 @@ profileRoutes.post('/getServicesById', async (req, res) => {
     const services = await Service.find({ _id: { $in: idArray } });
     // Проверяем, если услуги не найдены
     if (services.length === 0) {
+      console.log('-- no results for getServicesById with: ', idArray, new Date().toISOString())
       return res.status(200).json({ message: 'Услуги не найдены' });
     }
     // Возвращаем найденные услуги
+    console.log('++ success results for getServicesById with: ', idArray, new Date().toISOString())
     return res.status(200).json({ services: services, message: 'Услуги найдены' });
   } catch (error) {
     console.error('Ошибка при получении услуг:', error);
     return res.status(500).json({ message: 'Внутренняя ошибка сервера' });
   }
+
 });
 
 module.exports = profileRoutes;
