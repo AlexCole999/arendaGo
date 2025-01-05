@@ -1,6 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const { User, Adsenses, Order } = require('../models/models.js');
+const { User, Adsenses, Order, Service } = require('../models/models.js');
 
 const adsensesRoutes = express.Router();
 
@@ -53,88 +53,174 @@ adsensesRoutes.get('/adsensesMainScreen', async (req, res) => {
 });
 
 adsensesRoutes.get('/adsenses', async (req, res) => {
-
-  const page = parseInt(req.query.page) || 1; // Получаем номер страницы из параметра запроса или используем 1 по умолчанию
-
-  const pageSize = 20; // Размер страницы - 20 объявлений
-
-  console.log(req.query)
+  const page = parseInt(req.query.page) || 1; // Номер страницы
+  const pageSize = 20; // Размер страницы
+  console.log(req.query);
 
   try {
-    const query = {};
+    const serviceQuery = {};
 
-    if (req.query.title) {
-      query.title = new RegExp(req.query.title, 'i'); // 'i' делает поиск нечувствительным к регистру
-    }
-
-    if (req.query.coworking) {
-      if (req.query.coworking == 'true') { query.accType = 'Коворкинг' }
-    }
-
-    if (req.query.city) {
-      query.city = req.query.city;
-    }
-
-    if (req.query.district) {
-      query.district = req.query.district;
-    }
-
+    // Фильтры для подкатегорий и категорий
     if (req.query.subcategory) {
-      query.category = req.query.subcategory;
+      serviceQuery.category = req.query.subcategory;
     } else if (req.query.category) {
       if (req.query.category === 'Косметология') {
-        query.category = {
+        serviceQuery.category = {
           $in: [
             'Эстетическая косметология',
             'Аппаратная косметология',
             'Инъекционная косметология',
             'Депиляция, шугаринг',
-            'Перманентный макияж'
-          ]
+            'Перманентный макияж',
+          ],
         };
       } else if (req.query.category === 'Стилисты') {
-        query.category = {
-          $in: [
-            'Стилисты по волосам',
-            'Визаж',
-            'Барбершоп'
-          ]
+        serviceQuery.category = {
+          $in: ['Стилисты по волосам', 'Визаж', 'Барбершоп'],
         };
       } else {
-        query.category = req.query.category;
+        serviceQuery.category = req.query.category;
       }
     }
 
-
+    // Фильтры для ценового диапазона
     if (req.query.priceFrom && req.query.priceTo) {
-      query['servicesList.price'] = {
-        $gte: parseInt(req.query.priceFrom),
-        $lte: parseInt(req.query.priceTo)
+      serviceQuery.price = {
+        $gte: parseInt(req.query.priceFrom, 10), // Преобразуем строку в число
+        $lte: parseInt(req.query.priceTo, 10),   // Преобразуем строку в число
       };
     } else if (req.query.priceFrom) {
-      query['servicesList.price'] = {
-        $gte: parseInt(req.query.priceFrom)
+      serviceQuery.price = {
+        $gte: parseInt(req.query.priceFrom, 10), // Преобразуем строку в число
       };
     } else if (req.query.priceTo) {
-      query['servicesList.price'] = {
-        $lte: parseInt(req.query.priceTo)
+      serviceQuery.price = {
+        $lte: parseInt(req.query.priceTo, 10),   // Преобразуем строку в число
       };
     }
 
+    // Фильтр для валюты
     if (req.query.currency) {
-      query['servicesList.fiat'] = req.query.currency;
+      serviceQuery.fiat = req.query.currency;
     }
 
-    const adsenses = await Adsenses.find(query)
-      .skip((page - 1) * pageSize) // Пропускаем объявления на предыдущих страницах
-      .limit(pageSize); // Ограничиваем количество объявлений на текущей странице
+    // Получаем список ID владельцев услуг из коллекции Services
+    const services = await Service.find(serviceQuery).select('owner -_id');
+    const ownerIds = services.map((service) => service.owner);
 
-    res.json(adsenses);
+    const userQuery = {
+      _id: { $in: ownerIds }, // Фильтруем пользователей по ID из Services
+    };
+
+    // Фильтры для пользователей
+    if (req.query.city) {
+      userQuery.city = req.query.city;
+    }
+
+    if (req.query.district) {
+      userQuery.district = req.query.district;
+    }
+
+    // Фильтрация по названию (закомментировано, так как пока не нужно)
+    // if (req.query.title) {
+    //   userQuery.title = new RegExp(req.query.title, 'i'); // Нечувствительно к регистру
+    // }
+
+    // Получаем пользователей с фильтрацией
+    const users = await User.find(userQuery)
+      .skip((page - 1) * pageSize) // Пропускаем пользователей для предыдущих страниц
+      .limit(pageSize); // Ограничиваем количество пользователей на текущей странице
+    console.log(users)
+    res.json(users);
   } catch (err) {
-    console.error('Ошибка при получении объявлений из базы данных:', err);
-    res.status(500).json({ message: 'Ошибка при получении объявлений из базы данных' });
+    console.error('Ошибка при получении данных:', err);
+    res.status(500).json({ message: 'Ошибка при получении данных' });
   }
 });
+
+// adsensesRoutes.get('/adsenses', async (req, res) => {
+
+//   const page = parseInt(req.query.page) || 1; // Получаем номер страницы из параметра запроса или используем 1 по умолчанию
+
+//   const pageSize = 20; // Размер страницы - 20 объявлений
+
+//   console.log(req.query)
+
+//   try {
+//     const query = {};
+
+//     if (req.query.title) {
+//       query.title = new RegExp(req.query.title, 'i'); // 'i' делает поиск нечувствительным к регистру
+//     }
+
+//     if (req.query.coworking) {
+//       if (req.query.coworking == 'true') { query.accType = 'Коворкинг' }
+//     }
+
+//     if (req.query.city) {
+//       query.city = req.query.city;
+//     }
+
+//     if (req.query.district) {
+//       query.district = req.query.district;
+//     }
+
+//     if (req.query.subcategory) {
+//       query.category = req.query.subcategory;
+//     } else if (req.query.category) {
+//       if (req.query.category === 'Косметология') {
+//         query.category = {
+//           $in: [
+//             'Эстетическая косметология',
+//             'Аппаратная косметология',
+//             'Инъекционная косметология',
+//             'Депиляция, шугаринг',
+//             'Перманентный макияж'
+//           ]
+//         };
+//       } else if (req.query.category === 'Стилисты') {
+//         query.category = {
+//           $in: [
+//             'Стилисты по волосам',
+//             'Визаж',
+//             'Барбершоп'
+//           ]
+//         };
+//       } else {
+//         query.category = req.query.category;
+//       }
+//     }
+
+
+//     if (req.query.priceFrom && req.query.priceTo) {
+//       query['servicesList.price'] = {
+//         $gte: parseInt(req.query.priceFrom),
+//         $lte: parseInt(req.query.priceTo)
+//       };
+//     } else if (req.query.priceFrom) {
+//       query['servicesList.price'] = {
+//         $gte: parseInt(req.query.priceFrom)
+//       };
+//     } else if (req.query.priceTo) {
+//       query['servicesList.price'] = {
+//         $lte: parseInt(req.query.priceTo)
+//       };
+//     }
+
+//     if (req.query.currency) {
+//       query['servicesList.fiat'] = req.query.currency;
+//     }
+
+//     const adsenses = await Adsenses.find(query)
+//       .skip((page - 1) * pageSize) // Пропускаем объявления на предыдущих страницах
+//       .limit(pageSize); // Ограничиваем количество объявлений на текущей странице
+
+//     res.json(adsenses);
+//   } catch (err) {
+//     console.error('Ошибка при получении объявлений из базы данных:', err);
+//     res.status(500).json({ message: 'Ошибка при получении объявлений из базы данных' });
+//   }
+// });
 
 adsensesRoutes.post('/newAdsense', async (req, res) => {
 

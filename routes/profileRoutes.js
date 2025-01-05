@@ -68,10 +68,28 @@ profileRoutes.post('/registrationCheck', async (req, res) => {
 });
 
 profileRoutes.post('/changeUserData', async (req, res) => {
-  console.log(req.body);
+  const { _id, ...updateData } = req.body; // Получаем _id и остальные данные из тела запроса
+
   try {
-    return res.status(200).json(req.body);
-  } catch (error) { console.log(error) }
+    // Ищем пользователя и обновляем его данные
+    const updatedUser = await User.findOneAndUpdate(
+      { _id },                // Условие поиска
+      { $set: updateData },   // Данные для обновления
+      { new: true }           // Возвращает обновленный документ
+    );
+
+    if (!updatedUser) {
+      console.log('++ no user for update profile data with', req.body);
+      return res.status(200).json({ message: 'Пользователь не найден' });
+    }
+
+    console.log('++ changed user data with:', updatedUser);
+
+    return res.status(200).json(updatedUser); // Возвращаем обновленные данные
+  } catch (error) {
+    console.error('Ошибка при обновлении данных пользователя:', error);
+    return res.status(500).json({ error: 'Ошибка сервера' });
+  }
 });
 
 

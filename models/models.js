@@ -40,7 +40,7 @@ try {
     title: { type: String, default: '' },
     category: { type: String, default: '' },
     duration: { type: String, default: '' },
-    price: { type: String, default: '' },
+    price: { type: Number, default: 0 },
     fiat: { type: String, default: '' },
     rules: { type: String, default: '' },
     workers: { type: [String], default: [] },
