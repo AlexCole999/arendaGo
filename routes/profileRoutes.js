@@ -284,4 +284,51 @@ profileRoutes.post('/getServicesById', async (req, res) => {
 
 });
 
+profileRoutes.post('/deleteServiceById', async (req, res) => {
+  try {
+    const { id, userId } = req.body; // Получаем ID услуги и ID пользователя из тела запроса
+
+    // Проверяем, переданы ли необходимые параметры
+    if (!id) {
+      console.log(`-- Service ID not provided within post request at ${new Date().toISOString()}`);
+      return res.status(400).json({ message: 'ID услуги не указан' });
+    }
+
+    if (!userId) {
+      console.log(`-- User ID not provided within post request at ${new Date().toISOString()}`);
+      return res.status(400).json({ message: 'ID пользователя не указан' });
+    }
+
+    // Ищем и удаляем документ услуги в MongoDB
+    const deletedService = await Service.findByIdAndDelete(id);
+
+    // Если документ услуги не найден
+    if (!deletedService) {
+      console.log(`-- No service found for deletion with id: ${id} at ${new Date().toISOString()}`);
+      return res.status(404).json({ message: 'Услуга не найдена' });
+    }
+
+    // Ищем пользователя и удаляем ID услуги из массива services
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $pull: { services: id } }, // Удаляем ID услуги из массива services
+      { new: true } // Возвращаем обновленный документ пользователя
+    );
+
+    // Если пользователь не найден
+    if (!updatedUser) {
+      console.log(`-- User not found with id: ${userId} at ${new Date().toISOString()}`);
+      return res.status(404).json({ message: 'Пользователь не найден' });
+    }
+
+    // Выводим информацию об удаленном документе и обновленном пользователе
+    console.log(`++ Service deleted with ID: ${deletedService._id} and removed from user ID: ${userId} at ${new Date().toISOString()}`);
+    return res.status(200).json({ deletedService, updatedUser, message: 'Услуга удалена и обновлена у пользователя' });
+  } catch (error) {
+    console.error('Ошибка при удалении услуги:', error);
+    return res.status(500).json({ message: 'Внутренняя ошибка сервера' });
+  }
+});
+
+
 module.exports = profileRoutes;
