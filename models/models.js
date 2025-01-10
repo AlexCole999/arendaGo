@@ -90,16 +90,15 @@ try {
   Order = mongoose.model('Order');
 } catch (e) {
   Order = mongoose.model('Order', new mongoose.Schema({
-    adId: String,
+    serviceId: String,
+    owner: String,
+    client: String,
     date: String,
     duration: String,
-    bookingTime: String,
-    userPhone: String,
-    userName: String,
+    time: String,
     status: { type: String, default: 'waiting for approve' },
     createdAt: Number,
-    owner: String,
-    client: String
+    worker: String
   }));
 }
 

@@ -5,46 +5,31 @@ const { User, Adsenses, Order } = require('../models/models.js');
 const orderRoutes = express.Router();
 
 orderRoutes.post('/newOrder', async (req, res) => {
-  const { adId, date, duration, bookingTime, userPhone, userName, createdAt } = req.body;
+  const { service, owner, client, date, duration, time, status, createdAt, worker } = req.body;
 
-  console.log(adId, date, duration, bookingTime, userPhone, userName, createdAt);
+  console.log(service, owner, client, date, duration, time, status, createdAt, worker);
 
   try {
-
-    // Найдем owner по adId
-    const ad = await Adsenses.findOne({ _id: adId });
-    if (!ad) {
-      return res.status(404).json({ message: 'Объявление не найдено' });
-    }
-
-    const owner = await User.findOne({ phone: ad.user })
-    if (!owner) {
-      return res.status(404).json({ message: 'Владелец объявления не найден' });
-    }
-
-    // Находим заказчика (client) по userPhone
-    const client = await User.findOne({ phone: userPhone });
-    if (!client) {
-      return res.status(404).json({ message: 'Клиент не найден' });
-    }
-
+    // Создаем новый заказ
     const newOrder = new Order({
-      adId,
+      service,
+      owner,
+      client,
       date,
       duration,
-      bookingTime,
-      userPhone,
-      userName,
-      status: 'waiting for approve',
+      time,
+      status,
       createdAt,
-      owner: owner._id, // Ссылка на владельца из поля user в Adsenses
-      client: client._id  // Ссылка на клиента (пользователя)
+      worker
     });
 
-    // Сохраняем новый заказ
+    // Сохраняем заказ в базе данных
     await newOrder.save();
 
-    return res.status(200).json({ message: 'Заказ успешно создан', order: newOrder });
+    // Возвращаем ID нового заказа
+    console.log(`++ Created new order with service:${service},owner:{owner},client${client}`, date, duration, time, status, createdAt, worker, new Date().toISOString());
+    console.log('++ New order id:', newOrder._id);
+    return res.status(200).json({ message: 'success', order: newOrder });
 
   } catch (err) {
     console.error(err);

@@ -128,6 +128,7 @@ adsensesRoutes.get('/adsenses', async (req, res) => {
 
     // Получаем пользователей с фильтрацией
     const users = await User.find(userQuery)
+      .select('-password') // Исключаем поле password
       .skip((page - 1) * pageSize) // Пропускаем пользователей для предыдущих страниц
       .limit(pageSize); // Ограничиваем количество пользователей на текущей странице
     console.log(users)
