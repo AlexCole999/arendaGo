@@ -210,18 +210,18 @@ profileRoutes.post('/removeServiceFromFavorite', async (req, res) => {
 
 // Запрос избранных объявлений пользователя
 profileRoutes.post('/getFavoriteAdsenses', async (req, res) => {
-  const { phone } = req.body;
+  const { _id } = req.body;
   try {
-    const user = await User.findOne({ phone });
+    const user = await User.findOne({ _id });
 
     if (!user || !user.favorites.length) {
       return res.status(200).json({ message: 'Избранные объявления не найдены', adsenses: [] });
     }
 
-    // Получаем подробные данные по избранным объявлениям
-    const adsenses = await Adsenses.find({ _id: { $in: user.favorites.map(fav => fav.adId) } });
+    // Получаем подробные данные по избранным профилям
+    const profiles = await User.find({ _id: { $in: user.favorites } }).select('-password');
 
-    return res.status(200).json({ adsenses });
+    return res.status(200).json({ message: 'Объявления найдены', profiles: profiles });
   } catch (error) {
     console.error('Ошибка при запросе избранных объявлений:', error);
     return res.status(500).json({ message: 'Ошибка при запросе избранных объявлений' });
