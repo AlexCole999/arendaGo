@@ -144,26 +144,29 @@ profileRoutes.post('/acceptOrder', async (req, res) => {
 });
 
 // Добавление объявления в избранное
-profileRoutes.post('/addAdsenseToFavorite', async (req, res) => {
-  const { id, phone } = req.body;
+profileRoutes.post('/addServiceToFavorite', async (req, res) => {
+  const { _id, serviceId } = req.body;
   try {
-    // Ищем пользователя с указанным номером телефона
-    const user = await User.findOne({ phone });
+    console.log(_id, serviceId)
+    // return res.status(200).json({ message: 'logged success' });
 
-    // Проверяем, существует ли пользователь
+    // Ищем пользователя с указанным номером телефона
+    const user = await User.findOne({ _id: _id });
+
+    // // Проверяем, существует ли пользователь
     if (!user) {
-      return res.status(404).json({ message: 'Пользователь не найден' });
+      return res.status(200).json({ message: 'Пользователь не найден' });
     }
 
-    // Проверяем, есть ли объявление уже в избранном
-    const alreadyFavorite = user.favorites.some(fav => fav.adId === id);
+    // // Проверяем, есть ли объявление уже в избранном
+    const alreadyFavorite = user.favorites.some(fav => fav === serviceId);
 
     if (alreadyFavorite) {
       return res.status(200).json({ message: 'Объявление уже добавлено в избранное', favorites: user.favorites });
     }
 
     // Добавляем объявление, если его нет в избранном
-    user.favorites.push({ adId: id });
+    user.favorites.push(serviceId);
     await user.save();
 
     return res.status(200).json({ message: 'Объявление добавлено в избранное', favorites: user.favorites });
@@ -174,19 +177,29 @@ profileRoutes.post('/addAdsenseToFavorite', async (req, res) => {
 });
 
 // Удаление объявления из избранного
-profileRoutes.post('/removeAdsenseFromFavorite', async (req, res) => {
-  const { id, phone } = req.body;
+profileRoutes.post('/removeServiceFromFavorite', async (req, res) => {
+  const { _id, serviceId } = req.body;
   try {
-    // Находим пользователя и удаляем объявление из избранного
-    const user = await User.findOneAndUpdate(
-      { phone },
-      { $pull: { favorites: { adId: id } } }, // Удаляем объявление по id
-      { new: true }
-    );
+    console.log(_id, serviceId);
 
+    // Находим пользователя с указанным _id
+    const user = await User.findOne({ _id: _id });
+
+    // Проверяем, существует ли пользователь
     if (!user) {
       return res.status(404).json({ message: 'Пользователь не найден' });
     }
+
+    // Проверяем, есть ли объявление в избранном
+    const isFavorite = user.favorites.some(fav => fav === serviceId);
+
+    if (!isFavorite) {
+      return res.status(200).json({ message: 'Объявление не найдено в избранном', favorites: user.favorites });
+    }
+
+    // Удаляем объявление из избранного
+    user.favorites = user.favorites.filter(fav => fav !== serviceId);
+    await user.save();
 
     return res.status(200).json({ message: 'Объявление удалено из избранного', favorites: user.favorites });
   } catch (error) {
