@@ -267,88 +267,69 @@ adsensesRoutes.post('/getAdsensesById', async (req, res) => {
   }
 });
 
-adsensesRoutes.post('/updateAdsense', async (req, res) => {
-  const { id, title, category, city, district, phone, address, workhours, servicesList, description } = req.body;
+// adsensesRoutes.post('/updateAdsense', async (req, res) => {
+//   const { id, title, category, city, district, phone, address, workhours, servicesList, description } = req.body;
 
-  try {
-    const updatedAdsense = await Adsenses.findByIdAndUpdate(
-      id,
-      {
-        title,
-        category,
-        city,
-        district,
-        phone,
-        address,
-        workhours,
-        servicesList,
-        description
-      },
-      { new: true } // Опция для возврата обновленного документа
-    );
+//   try {
+//     const updatedAdsense = await Adsenses.findByIdAndUpdate(
+//       id,
+//       {
+//         title,
+//         category,
+//         city,
+//         district,
+//         phone,
+//         address,
+//         workhours,
+//         servicesList,
+//         description
+//       },
+//       { new: true } // Опция для возврата обновленного документа
+//     );
 
-    if (!updatedAdsense) {
-      return res.status(404).json({ status: 'error', message: 'Объявление не найдено' });
-    }
-    res.status(200).json({ status: 'success', data: updatedAdsense });
-  } catch (error) {
-    console.error('Ошибка при обновлении объявления:', error);
-    res.status(500).json({ status: 'error', message: 'Ошибка сервера' });
-  }
+//     if (!updatedAdsense) {
+//       return res.status(404).json({ status: 'error', message: 'Объявление не найдено' });
+//     }
+//     res.status(200).json({ status: 'success', data: updatedAdsense });
+//   } catch (error) {
+//     console.error('Ошибка при обновлении объявления:', error);
+//     res.status(500).json({ status: 'error', message: 'Ошибка сервера' });
+//   }
 
-});
+// });
 
-adsensesRoutes.post('/deleteAdsense', async (req, res) => {
-  const { id } = req.body;
+// adsensesRoutes.post('/deleteAdsense', async (req, res) => {
+//   const { id } = req.body;
 
-  // const ad = await Adsenses.findOne({ _id: id });
-  // const orders = await Order.find({ adId: id })
+//   // const ad = await Adsenses.findOne({ _id: id });
+//   // const orders = await Order.find({ adId: id })
 
-  try {
-    // Находим все заказы, связанные с этим объявлением
-    const ordersToDelete = await Order.deleteMany({ adId: id });
+//   try {
+//     // Находим все заказы, связанные с этим объявлением
+//     const ordersToDelete = await Order.deleteMany({ adId: id });
 
-    // Если заказы были найдены и удалены
-    if (ordersToDelete.deletedCount > 0) {
-      console.log(`${ordersToDelete.deletedCount} заказов удалено`);
-    } else {
-      console.log('Заказы не найдены');
-    }
+//     // Если заказы были найдены и удалены
+//     if (ordersToDelete.deletedCount > 0) {
+//       console.log(`${ordersToDelete.deletedCount} заказов удалено`);
+//     } else {
+//       console.log('Заказы не найдены');
+//     }
 
-    // Удаляем само объявление
-    const deletedAdsense = await Adsenses.findByIdAndDelete(id);
+//     // Удаляем само объявление
+//     const deletedAdsense = await Adsenses.findByIdAndDelete(id);
 
-    if (!deletedAdsense) {
-      return res.status(404).json({ message: 'Объявление не найдено' });
-    }
+//     if (!deletedAdsense) {
+//       return res.status(404).json({ message: 'Объявление не найдено' });
+//     }
 
-    return res.status(200).json({ message: 'Объявление и все связанные с ним заказы успешно удалены' });
+//     return res.status(200).json({ message: 'Объявление и все связанные с ним заказы успешно удалены' });
 
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: 'Ошибка при удалении объявления и заказов' });
-  }
-});
+//   } catch (err) {
+//     console.error(err);
+//     return res.status(500).json({ message: 'Ошибка при удалении объявления и заказов' });
+//   }
+// });
 
-adsensesRoutes.post('/newAdsenseTestimonial', async (req, res) => {
-  const { adId, rating, text } = req.body;
 
-  try {
-    const updatedAdsense = await Adsenses.findOneAndUpdate(
-      { _id: adId },
-      { $push: { testimonials: { rating, text } } },
-      { new: true }
-    );
-
-    if (!updatedAdsense) {
-      return res.status(404).json({ status: 'error', message: 'Adsense not found' });
-    }
-
-    res.status(201).json({ status: 'success', data: updatedAdsense });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ status: 'error', message: 'Server error' });
-  }
-});
 
 module.exports = adsensesRoutes;

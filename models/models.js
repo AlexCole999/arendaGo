@@ -27,7 +27,16 @@ try {
     favorites: { type: [String], default: [] },
     workers: { type: [String], default: [] },
     workAt: { type: [String], default: [] },
-    services: { type: [String], default: [] }
+    services: { type: [String], default: [] },
+    testimonials: {
+      type: [{
+        clientId: { type: String, default: '' },
+        avatar: { type: String, default: '' },
+        rating: { type: Number, default: 0 },
+        text: { type: String, default: '' }
+      }],
+      default: []
+    }
   }));
 }
 
@@ -44,6 +53,14 @@ try {
     fiat: { type: String, default: '' },
     rules: { type: String, default: '' },
     workers: { type: [String], default: [] },
+    testimonials: {
+      type: [new mongoose.Schema({ // Вложенная схема
+        profileId: String,
+        clientId: String,
+        rating: Number,
+        text: String
+      })], default: []
+    }
   }));
 }
 
@@ -101,5 +118,6 @@ try {
     worker: String
   }));
 }
+
 
 module.exports = { User, Adsenses, Service, Order };

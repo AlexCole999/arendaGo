@@ -343,5 +343,35 @@ profileRoutes.post('/deleteServiceById', async (req, res) => {
   }
 });
 
+profileRoutes.post('/newTestimonial', async (req, res) => {
+  try {
+    const { userId, clientId, avatar, rating, text } = req.body; // Все данные из тела запроса
+
+    // Проверка наличия всех обязательных данных
+    if (!userId) {
+      console.log('-- Tried to add newTestimonial, no user owner id, with: ', userId, clientId, avatar, rating, text, new Date().toISOString());
+      return res.status(200).json({ message: 'Профиля пользователя не существует' });
+    }
+
+    // Поиск пользователя и обновление массива testimonials
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $push: { testimonials: { clientId, avatar, rating, text } } },
+      { new: true } // Возвращает обновленный документ
+    );
+
+    if (!user) {
+      console.log('-- Tried to add newTestimonial, no user client id, with: ', userId, clientId, avatar, rating, text, new Date().toISOString());
+      return res.status(200).json({ message: 'Пользователь, отправляющий отзыв, не найден в базе' });
+    }
+
+    console.log('++ Added newTestimonial with: ', userId, clientId, avatar, rating, text, new Date().toISOString());
+    res.status(200).json({ message: 'success', user });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
 
 module.exports = profileRoutes;
