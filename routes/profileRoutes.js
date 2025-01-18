@@ -5,18 +5,7 @@ const s3 = require('../s3config.js');
 const AWS = require('aws-sdk');
 const multer = require('multer');
 const { User, Adsenses, Order, Service } = require('../models/models.js');
-
-// Конфигурация multer для хранения файлов
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, './uploads'); // Папка для сохранения файлов
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname)); // Генерация уникального имени файла
-  }
-});
-
-const upload = multer({ storage: storage });
+const sharp = require('sharp');
 
 const profileRoutes = express.Router();
 
@@ -401,20 +390,44 @@ profileRoutes.post('/updateUserAvatar', async (req, res) => {
     // Декодируем base64 строку
     const buffer = Buffer.from(avatar, 'base64');
 
+    const buffer80 = await sharp(buffer).webp({ quality: 80 }).toBuffer();
+    const buffer55 = await sharp(buffer).webp({ quality: 55 }).toBuffer();
+    const buffer25 = await sharp(buffer).webp({ quality: 25 }).toBuffer();
+
+    // const [buffer50, buffer30] = await Promise.all([quality50, quality30]);
+
     // Параметры для загрузки на S3
     const params = {
       Bucket: 'ВАШ_BUCKET_NAME', // Имя вашего bucket
       Key: `${_id}-${fileName}`, // Имя файла на S3
-      Body: buffer, // Тело запроса с изображением
+      Body: buffer80, // Тело запроса с изображением
       ContentType: 'image/jpeg', // Или другой тип изображения в зависимости от вашего файла
       ACL: 'public-read', // Права доступа
     };
 
-    // Загружаем файл в S3
-    const data = await s3.upload(params).promise();
+    const params50 = {
+      Bucket: 'ВАШ_BUCKET_NAME', // Имя вашего bucket
+      Key: `${_id}-${fileName}-55`, // Имя файла на S3 для 50% качества
+      Body: buffer55, // Сжато изображение с 50% качеством
+      ContentType: 'image/jpeg', // Тип изображения
+      ACL: 'public-read', // Права доступа
+    };
 
+    const params30 = {
+      Bucket: 'ВАШ_BUCKET_NAME', // Имя вашего bucket
+      Key: `${_id}-${fileName}-25`, // Имя файла на S3 для 30% качества
+      Body: buffer25, // Сжато изображение с 30% качеством
+      ContentType: 'image/jpeg', // Тип изображения
+      ACL: 'public-read', // Права доступа
+    };
+
+    const results = await Promise.allSettled([
+      s3.upload(params).promise(),
+      s3.upload(params50).promise(),
+      s3.upload(params30).promise(),
+    ]);
     // Возвращаем ссылку на файл после успешной загрузки
-    res.status(200).send({ message: 'Image uploaded successfully', fileUrl: data.Location });
+    res.status(200).send({ message: 'Изображение успешно загружено', fileUrl: results });
   } catch (error) {
     console.error('Error uploading image:', error);
     res.status(500).send('Error uploading image');
