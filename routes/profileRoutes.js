@@ -1,6 +1,22 @@
+require('dotenv').config(); // Подключаем переменные окружения из .env
 const express = require('express');
 const mongoose = require('mongoose');
+const s3 = require('../s3config.js');
+const AWS = require('aws-sdk');
+const multer = require('multer');
 const { User, Adsenses, Order, Service } = require('../models/models.js');
+
+// Конфигурация multer для хранения файлов
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, './uploads'); // Папка для сохранения файлов
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname)); // Генерация уникального имени файла
+  }
+});
+
+const upload = multer({ storage: storage });
 
 const profileRoutes = express.Router();
 
@@ -373,5 +389,36 @@ profileRoutes.post('/newTestimonial', async (req, res) => {
   }
 });
 
+// Эндпоинт для загрузки изображения
+profileRoutes.post('/updateUserAvatar', async (req, res) => {
+  try {
+    const { avatar, _id, fileName } = req.body;
+
+    if (!avatar) {
+      return res.status(400).send('No avatar image provided');
+    }
+
+    // Декодируем base64 строку
+    const buffer = Buffer.from(avatar, 'base64');
+
+    // Параметры для загрузки на S3
+    const params = {
+      Bucket: 'ВАШ_BUCKET_NAME', // Имя вашего bucket
+      Key: `${_id}-${fileName}`, // Имя файла на S3
+      Body: buffer, // Тело запроса с изображением
+      ContentType: 'image/jpeg', // Или другой тип изображения в зависимости от вашего файла
+      ACL: 'public-read', // Права доступа
+    };
+
+    // Загружаем файл в S3
+    const data = await s3.upload(params).promise();
+
+    // Возвращаем ссылку на файл после успешной загрузки
+    res.status(200).send({ message: 'Image uploaded successfully', fileUrl: data.Location });
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    res.status(500).send('Error uploading image');
+  }
+});
 
 module.exports = profileRoutes;

@@ -1,13 +1,18 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
+const cors = require('cors');
+require('dotenv').config();
 
 const app = express();
+
 const adsensesRoutes = require('./routes/adnsensesRoutes');
 const ImageUploadingRoutes = require('./routes/ImageUploadingRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const orderRoutes = require('./routes/orderRoutes.js');
-app.use(bodyParser.json());
+
+app.use(cors());
+app.use(bodyParser.json({ limit: '50mb' }));
 app.use(adsensesRoutes);
 app.use(ImageUploadingRoutes);
 app.use(profileRoutes);
