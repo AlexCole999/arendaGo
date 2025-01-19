@@ -390,31 +390,33 @@ profileRoutes.post('/updateUserAvatar', async (req, res) => {
     // Декодируем base64 строку
     const buffer = Buffer.from(avatar, 'base64');
 
+    console.log(_id)
+
     const buffer80 = await sharp(buffer).webp({ quality: 80 }).toBuffer();
     const buffer55 = await sharp(buffer).webp({ quality: 55 }).toBuffer();
     const buffer25 = await sharp(buffer).webp({ quality: 25 }).toBuffer();
 
     // const [buffer50, buffer30] = await Promise.all([quality50, quality30]);
-
+    const bucketName = 'ВАШ_BUCKET_NAME';
     // Параметры для загрузки на S3
     const params = {
-      Bucket: 'ВАШ_BUCKET_NAME', // Имя вашего bucket
+      Bucket: 'bucketName', // Имя вашего bucket
       Key: `${_id}-${fileName}`, // Имя файла на S3
       Body: buffer80, // Тело запроса с изображением
       ContentType: 'image/jpeg', // Или другой тип изображения в зависимости от вашего файла
       ACL: 'public-read', // Права доступа
     };
 
-    const params50 = {
-      Bucket: 'ВАШ_BUCKET_NAME', // Имя вашего bucket
+    const params55 = {
+      Bucket: 'bucketName', // Имя вашего bucket
       Key: `${_id}-${fileName}-55`, // Имя файла на S3 для 50% качества
       Body: buffer55, // Сжато изображение с 50% качеством
       ContentType: 'image/jpeg', // Тип изображения
       ACL: 'public-read', // Права доступа
     };
 
-    const params30 = {
-      Bucket: 'ВАШ_BUCKET_NAME', // Имя вашего bucket
+    const params25 = {
+      Bucket: 'bucketName', // Имя вашего bucket
       Key: `${_id}-${fileName}-25`, // Имя файла на S3 для 30% качества
       Body: buffer25, // Сжато изображение с 30% качеством
       ContentType: 'image/jpeg', // Тип изображения
@@ -423,11 +425,23 @@ profileRoutes.post('/updateUserAvatar', async (req, res) => {
 
     const results = await Promise.allSettled([
       s3.upload(params).promise(),
-      s3.upload(params50).promise(),
-      s3.upload(params30).promise(),
+      s3.upload(params55).promise(),
+      s3.upload(params25).promise(),
     ]);
+
+    const urls = {
+      'quality80': results[0]?.status === 'fulfilled' ? results[0]?.value?.Location : null,
+      'quality55': results[1]?.status === 'fulfilled' ? results[1]?.value?.Location : null,
+      'quality25': results[2]?.status === 'fulfilled' ? results[2]?.value?.Location : null,
+    };
+
+    console.log(urls, _id);
+
+    const user = await User.findByIdAndUpdate(_id, { avatar: urls }, { new: true });
+
     // Возвращаем ссылку на файл после успешной загрузки
-    res.status(200).send({ message: 'Изображение успешно загружено', fileUrl: results });
+
+    res.status(200).send({ message: 'success', fileUrl: results, user: user });
   } catch (error) {
     console.error('Error uploading image:', error);
     res.status(500).send('Error uploading image');

@@ -8,7 +8,11 @@ try {
 } catch (e) {
   User = mongoose.model('Users', new mongoose.Schema({
     accType: { type: String, default: '' },
-    avatar: { type: String, default: '' },
+    avatar: {
+      type: Map,
+      of: String,
+      default: {}
+    },
     name: { type: String, default: '' },
     phone: { type: String, default: '' },
     title: { type: String, default: '' },
