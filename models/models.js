@@ -25,7 +25,11 @@ try {
     telegram: { type: String, default: '' },
     whatsapp: { type: String, default: '' },
     description: { type: String, default: '' },
-    photos: { type: [String], default: [] },
+    photos: [{
+      type: Map,
+      of: String,
+      default: {}
+    }],
     password: { type: String, default: '' },
     email: { type: String, default: '' },
     favorites: { type: [String], default: [] },

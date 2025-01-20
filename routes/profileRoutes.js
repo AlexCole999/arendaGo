@@ -400,7 +400,7 @@ profileRoutes.post('/updateUserAvatar', async (req, res) => {
     const bucketName = 'ВАШ_BUCKET_NAME';
     // Параметры для загрузки на S3
     const params = {
-      Bucket: 'bucketName', // Имя вашего bucket
+      Bucket: bucketName, // Имя вашего bucket
       Key: `${_id}-${fileName}`, // Имя файла на S3
       Body: buffer80, // Тело запроса с изображением
       ContentType: 'image/jpeg', // Или другой тип изображения в зависимости от вашего файла
@@ -408,7 +408,7 @@ profileRoutes.post('/updateUserAvatar', async (req, res) => {
     };
 
     const params55 = {
-      Bucket: 'bucketName', // Имя вашего bucket
+      Bucket: bucketName, // Имя вашего bucket
       Key: `${_id}-${fileName}-55`, // Имя файла на S3 для 50% качества
       Body: buffer55, // Сжато изображение с 50% качеством
       ContentType: 'image/jpeg', // Тип изображения
@@ -416,7 +416,7 @@ profileRoutes.post('/updateUserAvatar', async (req, res) => {
     };
 
     const params25 = {
-      Bucket: 'bucketName', // Имя вашего bucket
+      Bucket: bucketName, // Имя вашего bucket
       Key: `${_id}-${fileName}-25`, // Имя файла на S3 для 30% качества
       Body: buffer25, // Сжато изображение с 30% качеством
       ContentType: 'image/jpeg', // Тип изображения
@@ -445,6 +445,112 @@ profileRoutes.post('/updateUserAvatar', async (req, res) => {
   } catch (error) {
     console.error('Error uploading image:', error);
     res.status(500).send('Error uploading image');
+  }
+});
+
+profileRoutes.post('/addUserPhoto', async (req, res) => {
+  try {
+    const { photo, _id, fileName } = req.body;
+
+    if (!photo) {
+      return res.status(400).send('No photo image provided');
+    }
+
+    // Декодируем base64 строку
+    const buffer = Buffer.from(photo, 'base64');
+
+    const buffer80 = await sharp(buffer).webp({ quality: 80 }).toBuffer();
+    const buffer55 = await sharp(buffer).webp({ quality: 55 }).toBuffer();
+    const buffer25 = await sharp(buffer).webp({ quality: 25 }).toBuffer();
+
+    const bucketName = 'ВАШ_BUCKET_NAME';
+
+    // Параметры для загрузки на S3
+    const params = {
+      Bucket: bucketName,
+      Key: `${_id}-${fileName}`, // Имя файла на S3
+      Body: buffer80,
+      ContentType: 'image/jpeg',
+      ACL: 'public-read',
+    };
+
+    const params55 = {
+      Bucket: bucketName,
+      Key: `${_id}-${fileName}-55`,
+      Body: buffer55,
+      ContentType: 'image/jpeg',
+      ACL: 'public-read',
+    };
+
+    const params25 = {
+      Bucket: bucketName,
+      Key: `${_id}-${fileName}-25`,
+      Body: buffer25,
+      ContentType: 'image/jpeg',
+      ACL: 'public-read',
+    };
+
+    const results = await Promise.allSettled([
+      s3.upload(params).promise(),
+      s3.upload(params55).promise(),
+      s3.upload(params25).promise(),
+    ]);
+
+    const urls = {
+      quality80: results[0]?.status === 'fulfilled' ? results[0]?.value?.Location : null,
+      quality55: results[1]?.status === 'fulfilled' ? results[1]?.value?.Location : null,
+      quality25: results[2]?.status === 'fulfilled' ? results[2]?.value?.Location : null,
+    };
+
+    console.log(urls, _id);
+
+    // Добавляем ссылки на фотографии в массив photos пользователя
+    const user = await User.findByIdAndUpdate(
+      _id,
+      { $push: { photos: urls } }, // Добавляем объект ссылок в массив photos
+      { new: true }
+    );
+
+    res.status(200).send({ message: 'success', fileUrls: urls, user });
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    res.status(500).send('Error uploading image');
+  }
+});
+
+profileRoutes.post('/removeUserPhoto', async (req, res) => {
+  try {
+    const { _id, fileName } = req.body;
+
+    if (!_id || !fileName) {
+      return res.status(400).send('User ID and file name are required');
+    }
+
+    // Находим пользователя и удаляем объект с фотографиями, у которых есть fileName
+    const user = await User.findByIdAndUpdate(
+      _id,
+      {
+        $pull: {
+          photos: {
+            $or: [
+              { quality80: { $regex: fileName } },
+              { quality55: { $regex: fileName } },
+              { quality25: { $regex: fileName } },
+            ],
+          },
+        },
+      },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).send('User not found');
+    }
+    // Возвращаем успешный ответ с результатом удаления фотографии из MongoDB
+    res.status(200).send({ message: 'success', user });
+  } catch (error) {
+    console.error('Error removing photo:', error);
+    res.status(500).send('Error removing photo');
   }
 });
 
