@@ -6,51 +6,52 @@ const adsensesRoutes = express.Router();
 
 adsensesRoutes.get('/adsensesMainScreen', async (req, res) => {
   try {
-
-    // Получение объявлений, отсортированных по createdAt
-    const adsensesSortedByCreatedAt = await Adsenses.find({})
+    // Получение пользователей, отсортированных по createdAt, с учетом accType
+    const usersSortedByCreatedAt = await User.find({ accType: { $in: ["Мастер", "Коворкинг", "Компания"] } })
       .sort({ createdAt: -1 }) // Сортируем по createdAt по убыванию
-      .limit(10); // Ограничиваем результат 8 объявлениями
+      .limit(10); // Ограничиваем результат 10 записями
 
-    // Получение объявлений, отсортированных по rating из testimonials
-    const adsensesSortedByRating = await Adsenses.aggregate([
+    // Получение пользователей, отсортированных по рейтингу из testimonials, с учетом accType
+    const usersSortedByRating = await User.aggregate([
+      { $match: { accType: { $in: ["Мастер", "Коворкинг", "Компания"] } } }, // Фильтруем по accType
       { $unwind: "$testimonials" }, // Разворачиваем массив testimonials
       {
         $group: {
           _id: "$_id",
-          user: { $first: "$user" },
+          accType: { $first: "$accType" },
+          avatar: { $first: "$avatar" },
+          name: { $first: "$name" },
+          phone: { $first: "$phone" },
           title: { $first: "$title" },
-          category: { $first: "$category" },
           city: { $first: "$city" },
           district: { $first: "$district" },
-          phone: { $first: "$phone" },
           address: { $first: "$address" },
+          workdays: { $first: "$workdays" },
           workhours: { $first: "$workhours" },
-          servicesList: { $first: "$servicesList" },
-          imagesList: { $first: "$imagesList" },
+          instagram: { $first: "$instagram" },
+          telegram: { $first: "$telegram" },
+          whatsapp: { $first: "$whatsapp" },
           description: { $first: "$description" },
-          instagram: { $first: "$instagram" }, // Добавляем 
-          telegram: { $first: "$telegram" },   // Добавляем telegram
-          whatsapp: { $first: "$whatsapp" },     // Добавляем whatsapp
+          photos: { $first: "$photos" },
+          services: { $first: "$services" },
           testimonials: { $push: "$testimonials" },
           createdAt: { $first: "$createdAt" },
           averageRating: { $avg: "$testimonials.rating" } // Рассчитываем среднее значение rating
         }
       },
       { $sort: { averageRating: -1 } }, // Сортируем по среднему значению rating по убыванию
-      { $limit: 12 } // Ограничиваем результат 12 объявлениями
+      { $limit: 12 } // Ограничиваем результат 12 записями
     ]);
 
-    console.log(adsensesSortedByRating)
-
     res.json({
-      adsensesSortedByCreatedAt: adsensesSortedByCreatedAt,
-      adsensesSortedByRating: adsensesSortedByRating
+      usersSortedByCreatedAt,
+      usersSortedByRating
     });
   } catch (error) {
     res.status(500).json({ message: 'Ошибка сервера', error });
   }
 });
+
 
 adsensesRoutes.get('/adsenses', async (req, res) => {
   const page = parseInt(req.query.page) || 1; // Номер страницы
