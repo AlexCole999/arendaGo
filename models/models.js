@@ -121,11 +121,24 @@ try {
     date: String,
     duration: String,
     time: String,
-    status: { type: String, default: 'waiting for approve' },
+    status: { type: String, default: 'waiting' },
     createdAt: Number,
     worker: String
   }));
 }
 
+let Invitation;
+try {
+  Invitation = mongoose.model('Invitation');
+} catch (e) {
+  Invitation = mongoose.model('Invitation', new mongoose.Schema({
+    workerId: { type: String, required: true }, // ID работника
+    employerId: { type: String, required: true }, // ID работодателя
+    status: { type: String, default: 'waiting' }, // waiting, approved, canceled
+    createdAt: { type: Number, default: Date.now }, // Дата создания
+    updatedAt: { type: Number, default: Date.now } // Дата обновления
+  }));
+}
 
-module.exports = { User, Adsenses, Service, Order };
+
+module.exports = { User, Adsenses, Service, Order, Invitation };

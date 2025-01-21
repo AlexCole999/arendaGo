@@ -294,7 +294,7 @@ profileRoutes.post('/getServicesById', async (req, res) => {
     }
     // Возвращаем найденные услуги
     console.log('++ success results for getServicesById with: ', idArray, new Date().toISOString())
-    return res.status(200).json({ services: services, message: 'Услуги найдены' });
+    return res.status(200).json({ services: services, message: 'Услуги найдены', result: 'success' });
   } catch (error) {
     console.error('Ошибка при получении услуг:', error);
     return res.status(500).json({ message: 'Внутренняя ошибка сервера' });

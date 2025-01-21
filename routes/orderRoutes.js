@@ -5,14 +5,14 @@ const { User, Adsenses, Order } = require('../models/models.js');
 const orderRoutes = express.Router();
 
 orderRoutes.post('/newOrder', async (req, res) => {
-  const { service, owner, client, date, duration, time, status, createdAt, worker } = req.body;
+  const { serviceId, owner, client, date, duration, time, status, createdAt, worker } = req.body;
 
-  console.log(service, owner, client, date, duration, time, status, createdAt, worker);
+  console.log(serviceId, owner, client, date, duration, time, status, createdAt, worker);
 
   try {
     // Создаем новый заказ
     const newOrder = new Order({
-      service,
+      serviceId,
       owner,
       client,
       date,
@@ -27,7 +27,7 @@ orderRoutes.post('/newOrder', async (req, res) => {
     await newOrder.save();
 
     // Возвращаем ID нового заказа
-    console.log(`++ Created new order with service:${service},owner:{owner},client${client}`, date, duration, time, status, createdAt, worker, new Date().toISOString());
+    console.log(`++ Created new order with service:${serviceId},owner:{owner},client${client}`, date, duration, time, status, createdAt, worker, new Date().toISOString());
     console.log('++ New order id:', newOrder._id);
     return res.status(200).json({ message: 'success', order: newOrder });
 
@@ -38,150 +38,76 @@ orderRoutes.post('/newOrder', async (req, res) => {
 
 });
 
-orderRoutes.post('/getOrdersIfUserIsClient', async (req, res) => {
-  const { userPhone } = req.body;
+orderRoutes.post('/getOrdersByUserId', async (req, res) => {
+  const { _id } = req.body;
 
   try {
-    // Находим пользователя по телефону
-    const user = await User.findOne({ phone: userPhone });
-    if (!user) {
-      return res.status(404).json({ message: 'Пользователь не найден' });
-    }
-
-    // Находим все заказы, где этот пользователь является client
-    const orders = await Order.find({
-      client: user._id,
-      status: 'waiting for approve'
-    });
-
-    return res.status(200).json({ message: 'Заказы успешно найдены', orders });
-
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: 'Ошибка при получении заказов' });
-  }
-});
-
-orderRoutes.post('/getOrdersIfUserIsOwner', async (req, res) => {
-  const { userPhone } = req.body;
-
-  try {
-    // Находим пользователя по телефону
-    const user = await User.findOne({ phone: userPhone });
-    if (!user) {
-      return res.status(404).json({ message: 'Пользователь не найден' });
-    }
-
-    // Находим все заказы, где этот пользователь является владельцем (owner)
-    const orders = await Order.find({
-      owner: user._id,
-      status: 'waiting for approve'
-    });
-
-    return res.status(200).json({ message: 'Заказы успешно найдены', orders });
-
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: 'Ошибка при получении заказов' });
-  }
-});
-
-orderRoutes.post('/getOrdersInArchive', async (req, res) => {
-  const { userPhone } = req.body;
-
-  try {
-    // Находим пользователя по телефону
-    const user = await User.findOne({ phone: userPhone });
-    if (!user) {
-      return res.status(404).json({ message: 'Пользователь не найден' });
-    }
-
-    // Находим все заказы, где этот пользователь либо является клиентом, либо заказчиком
+    // Найти заказы, где пользователь является владельцем или клиентом
     const orders = await Order.find({
       $or: [
-        { client: user._id },
-        { owner: user._id }
-      ],
-      status: { $ne: 'waiting for approve' }  // Статус не равен "waiting for approve"
-    });
+        { owner: _id },
+        { client: _id }
+      ]
+    })
+      .sort({ createdAt: -1 }); // Сортируем по полю createdAt, чтобы сначала шли самые новые
 
-    // Выводим заказы в консоль
-    console.log('ordersarchive');
-
-    return res.status(200).json({ message: 'Заказы успешно найдены', orders, success: true });
-
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: 'Ошибка при получении заказов' });
+    res.json({ success: true, orders });
+  } catch (error) {
+    console.error("Ошибка получения заказов:", error);
+    res.status(500).json({ success: false, message: 'Ошибка сервера' });
   }
 });
 
-// Подтверждение заказа
-orderRoutes.post('/approweOrder', async (req, res) => {
-  const { orderId } = req.body;
-  console.log('approwe order', req.body)
+orderRoutes.post('/approveOrder', async (req, res) => {
   try {
-    // Находим заказ по его ID и меняем статус на "cancelled"
-    const result = await Order.updateOne(
-      { _id: orderId },  // Условие поиска по ID заказа
-      { $set: { status: 'approwed' } }  // Обновляем только статус
+    const { orderId } = req.body;
+
+    if (!orderId) {
+      return res.status(400).json({ success: false, message: 'Не указан ID заказа' });
+    }
+
+    const updatedOrder = await Order.findByIdAndUpdate(
+      orderId,
+      { status: 'approved' },
+      { new: true }
     );
 
-    // Проверяем, был ли заказ найден и обновлен
-    if (result.nModified === 0) {
-      return res.status(404).json({ message: 'Заказ не найден или уже отменен' });
+    if (!updatedOrder) {
+      return res.status(404).json({ success: false, message: 'Заказ не найден' });
     }
 
-    return res.status(200).json({ message: 'Заказ успешно отменен', success: true });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: 'Ошибка при отмене заказа' });
+    res.json({ success: true, message: 'Заказ подтверждён', order: updatedOrder });
+  } catch (error) {
+    console.error('Ошибка подтверждения заказа:', error);
+    res.status(500).json({ success: false, message: 'Ошибка сервера' });
   }
 });
 
-// Отмена заказа
-orderRoutes.post('/dropOrder', async (req, res) => {
-  const { orderId } = req.body;
-  console.log('drop order', req.body)
-
+orderRoutes.post('/cancelOrder', async (req, res) => {
   try {
-    // Находим заказ по его ID и меняем статус на "cancelled"
-    const result = await Order.updateOne(
-      { _id: orderId },  // Условие поиска по ID заказа
-      { $set: { status: 'cancelled' } }  // Обновляем только статус
+    const { orderId } = req.body;
+
+    if (!orderId) {
+      return res.status(400).json({ success: false, message: 'Не указан ID заказа' });
+    }
+
+    const updatedOrder = await Order.findByIdAndUpdate(
+      orderId,
+      { status: 'canceled' },
+      { new: true }
     );
 
-    // Проверяем, был ли заказ найден и обновлен
-    if (result.nModified === 0) {
-      return res.status(404).json({ message: 'Заказ не найден или уже отменен' });
+    if (!updatedOrder) {
+      return res.status(404).json({ success: false, message: 'Заказ не найден' });
     }
 
-    return res.status(200).json({ message: 'Заказ успешно отменен', success: true });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: 'Ошибка при отмене заказа' });
+    res.json({ success: true, message: 'Заказ отменён', order: updatedOrder });
+  } catch (error) {
+    console.error('Ошибка отмены заказа:', error);
+    res.status(500).json({ success: false, message: 'Ошибка сервера' });
   }
 });
 
-orderRoutes.post('/terminateOrder', async (req, res) => {
-  const { orderId } = req.body;
-  console.log('delete order');
-
-  try {
-    // Находим заказ по его ID и удаляем его
-    const result = await Order.deleteOne({ _id: orderId });
-
-    // Проверяем, был ли заказ найден и удален
-    if (result.deletedCount === 0) {
-      return res.status(404).json({ message: 'Заказ не найден или уже удален' });
-    }
-
-    return res.status(200).json({ message: 'Заказ успешно удален', success: true });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: 'Ошибка при удалении заказа' });
-  }
-});
 
 
 module.exports = orderRoutes;
