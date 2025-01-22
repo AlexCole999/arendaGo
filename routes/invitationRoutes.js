@@ -31,36 +31,165 @@ invitationRoutes.post('/users/masters', async (req, res) => {
 invitationRoutes.post('/newInvitation', async (req, res) => {
   try {
     const { employerId, workerId } = req.body;
-    console.log(employerId, workerId)
-    return res.status(201).json({ message: 'success' })
+
     // Проверяем обязательные поля
-    // if (!workerId || !employerId || !orderId) {
-    //   return res.status(400).json({ error: 'workerId, employerId, and orderId are required' });
-    // }
+    if (!employerId || !workerId) {
+      console.log('-- tried to add newInvitation with:', employerId, workerId, new Date().toISOString());
+      return res.status(400).json({ error: 'workerId and employerId are required' });
+    }
 
-    // // Создаём приглашение
-    // const invitation = new Invitation({
-    //   workerId,
-    //   employerId,
-    //   status: 'pending',
-    //   createdAt: Date.now(),
-    //   updatedAt: Date.now()
-    // });
+    // Проверяем, существует ли уже приглашение со статусом "waiting"
+    const existingInvitation = await Invitation.findOne({
+      employerId,
+      workerId,
+      status: 'waiting'
+    });
 
-    // await invitation.save();
+    if (existingInvitation) {
+      console.log('-- duplicate newInvitation detected:', employerId, workerId, new Date().toISOString());
+      return res.status(200).json({
+        message: 'dupclicate'
+      });
+    }
 
-    // // Отправляем результат
-    // return res.status(201).json({
-    //   message: 'Invitation created successfully',
-    //   data: invitation
-    // });
+    // Создаём новое приглашение
+    const invitation = new Invitation({
+      employerId,
+      workerId,
+      status: 'waiting',
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    });
+
+    await invitation.save();
+
+    console.log('++ newInvitation created with:', employerId, workerId, new Date().toISOString());
+    // Отправляем результат
+    return res.status(200).json({
+      message: 'success',
+      invitation: invitation
+    });
   } catch (error) {
     console.error('Error creating invitation:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
 
+invitationRoutes.post('/getEmployerApprovedInvitations', async (req, res) => {
+  try {
+    const { employerId } = req.body;
+
+    // Проверяем наличие employerId в запросе
+    if (!employerId) {
+      return res.status(400).json({ error: 'employerId is required' });
+    }
+
+    // Ищем приглашения с заданным employerId и статусом 'approved'
+    const invitations = await Invitation.find({ employerId, status: 'approved' });
+
+    // Отправляем список приглашений
+    res.json({ message: 'success', invitations: invitations });
+  } catch (error) {
+    console.error('Error fetching invitations:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+invitationRoutes.post('/getWorkerUnansweredInvitations', async (req, res) => {
+  try {
+    const { workerId } = req.body;
+
+    // Проверяем наличие workerId в запросе
+    if (!workerId) {
+      return res.status(400).json({ error: 'workerId is required' });
+    }
+
+    // Ищем приглашения с заданным workerId и статусом waiting
+    const invitations = await Invitation.find({ workerId, status: 'waiting' });
+
+    // Отправляем список приглашений
+    res.json({ message: 'success', invitations: invitations });
+  } catch (error) {
+    console.error('Error fetching invitations:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+invitationRoutes.post('/getWorkerAnsweredInvitations', async (req, res) => {
+  try {
+    const { workerId } = req.body;
+
+    // Проверяем наличие workerId в запросе
+    if (!workerId) {
+      return res.status(400).json({ error: 'workerId is required' });
+    }
+
+    // Ищем приглашения с заданным workerId и статусом waiting
+    const invitations = await Invitation.find({ workerId, status: { $ne: 'waiting' } });
+
+    // Отправляем список приглашений
+    res.json({ message: 'success', invitations: invitations });
+  } catch (error) {
+    console.error('Error fetching invitations:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 
+// Изменение статуса на approved
+invitationRoutes.post('/approveInvitation', async (req, res) => {
+  try {
+    const { invitationId } = req.body;
+
+    // Проверяем наличие invitationId
+    if (!invitationId) {
+      return res.status(400).json({ error: 'invitationId is required' });
+    }
+
+    // Обновляем статус на approved
+    const updatedInvitation = await Invitation.findByIdAndUpdate(
+      invitationId,
+      { status: 'approved', updatedAt: Date.now() },
+      { new: true } // Возвращаем обновленный документ
+    );
+
+    if (!updatedInvitation) {
+      return res.status(404).json({ error: 'Invitation not found' });
+    }
+
+    res.json({ message: 'success', invitation: updatedInvitation });
+  } catch (error) {
+    console.error('Error approving invitation:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Изменение статуса на canceled
+invitationRoutes.post('/cancelInvitation', async (req, res) => {
+  try {
+    const { invitationId } = req.body;
+
+    // Проверяем наличие invitationId
+    if (!invitationId) {
+      return res.status(400).json({ error: 'invitationId is required' });
+    }
+
+    // Обновляем статус на canceled
+    const updatedInvitation = await Invitation.findByIdAndUpdate(
+      invitationId,
+      { status: 'canceled', updatedAt: Date.now() },
+      { new: true } // Возвращаем обновленный документ
+    );
+
+    if (!updatedInvitation) {
+      return res.status(404).json({ error: 'Invitation not found' });
+    }
+
+    res.json({ message: 'success', invitation: updatedInvitation });
+  } catch (error) {
+    console.error('Error canceling invitation:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 module.exports = invitationRoutes;
