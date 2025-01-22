@@ -41,8 +41,7 @@ invitationRoutes.post('/newInvitation', async (req, res) => {
     // Проверяем, существует ли уже приглашение со статусом "waiting"
     const existingInvitation = await Invitation.findOne({
       employerId,
-      workerId,
-      status: 'waiting'
+      workerId
     });
 
     if (existingInvitation) {
@@ -72,6 +71,26 @@ invitationRoutes.post('/newInvitation', async (req, res) => {
   } catch (error) {
     console.error('Error creating invitation:', error);
     return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+invitationRoutes.post('/getEmployerInvitations', async (req, res) => {
+  try {
+    const { employerId } = req.body;
+
+    // Проверяем наличие employerId в запросе
+    if (!employerId) {
+      return res.status(400).json({ error: 'employerId is required' });
+    }
+
+    // Ищем приглашения с заданным employerId и статусом 'approved'
+    const invitations = await Invitation.find({ employerId });
+
+    // Отправляем список приглашений
+    res.json({ message: 'success', invitations: invitations });
+  } catch (error) {
+    console.error('Error fetching invitations:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
