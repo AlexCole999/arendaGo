@@ -97,6 +97,29 @@ profileRoutes.post('/changeUserData', async (req, res) => {
   }
 });
 
+profileRoutes.post('/getProfilesByIds', async (req, res) => {
+  const { adIds } = req.body; // Получаем массив adId из тела запроса
+
+  console.log('adIds:', adIds)
+
+  if (!Array.isArray(adIds) || adIds.length === 0) {
+    return res.status(400).json({ message: 'adIds must be a non-empty array' });
+  }
+
+  try {
+    // Находим объявления по переданным adId
+    const ads = await User.find({ '_id': { $in: adIds } });
+
+    if (ads.length === 0) {
+      return res.status(404).json({ message: 'No ads found for the provided adIds' });
+    }
+
+    return res.status(200).json(ads);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'An error occurred while fetching ads' });
+  }
+});
 
 profileRoutes.post('/getUserAdsenses', async (req, res) => {
   let user = req?.body?.user ? JSON.parse(req.body.user).phone : 'none'

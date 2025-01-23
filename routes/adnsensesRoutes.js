@@ -244,29 +244,7 @@ adsensesRoutes.post('/newAdsense', async (req, res) => {
 
 });
 
-adsensesRoutes.post('/getAdsensesById', async (req, res) => {
-  const { adIds } = req.body; // Получаем массив adId из тела запроса
 
-  console.log(adIds)
-
-  if (!Array.isArray(adIds) || adIds.length === 0) {
-    return res.status(400).json({ message: 'adIds must be a non-empty array' });
-  }
-
-  try {
-    // Находим объявления по переданным adId
-    const ads = await Adsenses.find({ '_id': { $in: adIds } });
-
-    if (ads.length === 0) {
-      return res.status(404).json({ message: 'No ads found for the provided adIds' });
-    }
-
-    return res.status(200).json(ads);
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'An error occurred while fetching ads' });
-  }
-});
 
 // adsensesRoutes.post('/updateAdsense', async (req, res) => {
 //   const { id, title, category, city, district, phone, address, workhours, servicesList, description } = req.body;
