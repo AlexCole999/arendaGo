@@ -5,14 +5,15 @@ const { User, Adsenses, Order } = require('../models/models.js');
 const orderRoutes = express.Router();
 
 orderRoutes.post('/newOrder', async (req, res) => {
-  const { serviceId, owner, client, date, duration, time, status, createdAt, worker } = req.body;
+  const { serviceId, manyServices, owner, client, date, duration, time, status, createdAt, worker } = req.body;
 
-  console.log(serviceId, owner, client, date, duration, time, status, createdAt, worker);
+  console.log(serviceId, manyServices, owner, client, date, duration, time, status, createdAt, worker);
 
   try {
     // Создаем новый заказ
     const newOrder = new Order({
       serviceId,
+      manyServices,
       owner,
       client,
       date,
@@ -27,7 +28,7 @@ orderRoutes.post('/newOrder', async (req, res) => {
     await newOrder.save();
 
     // Возвращаем ID нового заказа
-    console.log(`++ Created new order with service:${serviceId},owner:{owner},client${client}`, date, duration, time, status, createdAt, worker, new Date().toISOString());
+    console.log(`++ Created new order with service:${serviceId},owner:{owner},client${client}`, manyServices, date, duration, time, status, createdAt, worker, new Date().toISOString());
     console.log('++ New order id:', newOrder._id);
     return res.status(200).json({ message: 'success', order: newOrder });
 

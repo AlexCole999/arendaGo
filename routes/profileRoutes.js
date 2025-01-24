@@ -288,7 +288,7 @@ profileRoutes.post('/createNewService', async (req, res) => {
     await user.save();
     console.log('++ appended new service to user profile services list:', user._id, newService._id, new Date().toISOString())
 
-    return res.status(201).json({ message: 'Сервис успешно создан', service: newService });
+    return res.status(201).json({ message: 'success', service: newService });
 
   } catch (error) {
     console.error('Ошибка при создании сервиса:', error);

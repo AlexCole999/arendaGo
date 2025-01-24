@@ -116,6 +116,7 @@ try {
 } catch (e) {
   Order = mongoose.model('Order', new mongoose.Schema({
     serviceId: String,
+    manyServices: [String],
     owner: String,
     client: String,
     date: String,
