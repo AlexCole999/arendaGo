@@ -10,18 +10,18 @@ const sharp = require('sharp');
 const profileRoutes = express.Router();
 
 profileRoutes.post('/registrationNewUser', async (req, res) => {
-  const { accType, name, phone, password } = req.body;
+  const { accType, phone, password } = req.body;
   try {
     const existingUser = await User.findOne({ phone });
     if (existingUser) {
-      console.log('-- tried to registrate existing account with:', accType, name, phone, password, new Date().toISOString());
+      console.log('-- tried to registrate existing account with:', accType, phone, password, new Date().toISOString());
       return res.status(200).json({
         message: 'Такой пользователь уже существует. Нажмите на кнопку "Уже есть аккаунт" под формой регистрации',
       });
     } else {
-      const newUser = new User({ accType, phone, name, password });
+      const newUser = new User({ accType, phone, password });
       await newUser.save();
-      console.log('++ Registrated account success with:', accType, name, phone, password, new Date().toISOString());
+      console.log('++ Registrated account success with:', accType, phone, password, new Date().toISOString());
       return res.status(200).json({ user: newUser, registrationResult: true });
     }
   } catch (error) {
