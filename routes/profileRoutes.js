@@ -97,6 +97,31 @@ profileRoutes.post('/changeUserData', async (req, res) => {
   }
 });
 
+profileRoutes.post('/deleteAccount', async (req, res) => {
+  const { _id } = req.body;
+
+  try {
+    // Проверяем, передан ли ID пользователя
+    if (!_id) {
+      return res.status(400).json({ message: 'ID пользователя обязателен' });
+    }
+
+    // Удаляем пользователя из базы данных
+    const deletedUser = await User.findByIdAndDelete(_id);
+
+    // Если пользователь не найден
+    if (!deletedUser) {
+      return res.status(404).json({ message: 'Пользователь не найден' });
+    }
+
+    console.log(`++ Аккаунт пользователя с ID: ${_id} успешно удалён`);
+    return res.status(200).json({ message: 'success' });
+  } catch (error) {
+    console.error('Ошибка при удалении аккаунта:', error);
+    return res.status(500).json({ message: 'Ошибка при удалении аккаунта' });
+  }
+});
+
 profileRoutes.post('/getProfilesByIds', async (req, res) => {
   const { adIds } = req.body; // Получаем массив adId из тела запроса
 
