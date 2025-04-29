@@ -16,6 +16,7 @@ try {
     name: { type: String, default: '' },
     phone: { type: String, default: '' },
     title: { type: String, default: '' },
+    country: { type: String, default: 'Узбекистан' },
     city: { type: String, default: '' },
     district: { type: String, default: '' },
     address: { type: String, default: '' },
