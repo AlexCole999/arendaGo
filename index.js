@@ -24,10 +24,10 @@ app.use(invitationRoutes);
 app.use(express.static('uploads'));//директория с отдачей файлов
 app.use(express.static('uploadsAdmin'));//директория с отдачей файлов
 
-// let host = 'mongodb+srv://leonidworkuz:kKf3RCKhTh4Zpu3p@clusterarendagotest.jkls2x2.mongodb.net/?retryWrites=true&w=majority&appName=ClusterArendaGoTest'
-
+let host = 'mongodb+srv://leonidsamograew:f0w46Xij58g68FkE@cluster0.gnuizze.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'
+// let localhost = 'mongodb://localhost:27017/arendaGo'
 // Подключение к MongoDB
-mongoose.connect('mongodb://localhost:27017/arendaGo')
+mongoose.connect(host)
   .then(() => {
     console.log('Подключено к MongoDB на localhost');
   }).catch((err) => {
