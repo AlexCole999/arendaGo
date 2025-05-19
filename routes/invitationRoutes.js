@@ -41,13 +41,22 @@ invitationRoutes.post('/newInvitation', async (req, res) => {
     // Проверяем, существует ли уже приглашение со статусом "waiting"
     const existingInvitation = await Invitation.findOne({
       employerId,
-      workerId
+      workerId,
+      status: 'waiting'
     });
 
     if (existingInvitation) {
       console.log('-- duplicate newInvitation detected:', employerId, workerId, new Date().toISOString());
       return res.status(200).json({
         message: 'dupclicate'
+      });
+    }
+
+    const employer = await User.findById(employerId);
+    if (employer && Array.isArray(employer.workers) && employer.workers.includes(workerId)) {
+      console.log('-- worker already works for employer:', employerId, workerId, new Date().toISOString());
+      return res.status(200).json({
+        message: 'already work'
       });
     }
 
@@ -165,18 +174,42 @@ invitationRoutes.post('/approveInvitation', async (req, res) => {
       return res.status(400).json({ error: 'invitationId is required' });
     }
 
-    // Обновляем статус на approved
-    const updatedInvitation = await Invitation.findByIdAndUpdate(
-      invitationId,
-      { status: 'approved', updatedAt: Date.now() },
-      { new: true } // Возвращаем обновленный документ
-    );
-
-    if (!updatedInvitation) {
+    // Находим приглашение и получаем workerId и employerId
+    const invitation = await Invitation.findById(invitationId);
+    if (!invitation) {
       return res.status(404).json({ error: 'Invitation not found' });
     }
 
-    res.json({ message: 'success', invitation: updatedInvitation });
+    const { workerId, employerId } = invitation;
+
+    // Обновляем статус приглашения на approved через findByIdAndUpdate
+    await Invitation.findByIdAndUpdate(
+      invitationId,
+      { status: 'approved', updatedAt: Date.now() }
+    );
+
+    // // Находим работодателя и работника
+    const employer = await User.findById(employerId);
+    const worker = await User.findById(workerId);
+    console.log(worker, employer)
+
+    if (!employer || !worker) {
+      return res.status(404).json({ error: 'Employer or worker not found' });
+    }
+
+    // // Добавляем workerId в workers работодателя, если его там нет
+    await User.findOneAndUpdate(
+      { _id: employerId, workers: { $ne: workerId } },
+      { $push: { workers: workerId } }
+    );
+
+    // Заменяем workAt у работника на employerId
+    await User.findOneAndUpdate(
+      { _id: workerId },
+      { workAt: employerId }
+    );
+
+    res.json({ message: 'success', invitation });
   } catch (error) {
     console.error('Error approving invitation:', error);
     res.status(500).json({ error: 'Internal server error' });

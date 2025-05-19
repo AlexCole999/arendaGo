@@ -308,9 +308,11 @@ profileRoutes.post('/createNewService', async (req, res) => {
     console.log('++ created new service with with:', user._id, newService._id, new Date().toISOString())
 
 
-    // Добавляем ID нового сервиса в массив services у пользователя
-    user.services.push(newService._id);
-    await user.save();
+    // Добавляем ID нового сервиса в массив services у пользователя через findOneAndUpdate
+    await User.findOneAndUpdate(
+      { _id: user._id },
+      { $push: { services: newService._id } }
+    );
     console.log('++ appended new service to user profile services list:', user._id, newService._id, new Date().toISOString())
 
     return res.status(201).json({ message: 'success', service: newService });

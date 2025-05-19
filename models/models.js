@@ -35,7 +35,7 @@ try {
     email: { type: String, default: '' },
     favorites: { type: [String], default: [] },
     workers: { type: [String], default: [] },
-    workAt: { type: [String], default: [] },
+    workAt: { type: String, default: '' },
     services: { type: [String], default: [] },
     testimonials: {
       type: [{
