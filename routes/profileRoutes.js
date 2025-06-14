@@ -606,7 +606,7 @@ profileRoutes.post('/removeUserPhoto', async (req, res) => {
 
 profileRoutes.post('/createNewCompany', async (req, res) => {
   const { _id, title, city, country, district, address } = req.body;
-
+  console.log('createNewCompany', req.body);
   try {
     // Создание новой "компании" (в твоём случае это просто новый пользователь)
     const newCompany = new User({
