@@ -45,7 +45,9 @@ try {
         text: { type: String, default: '' }
       }],
       default: []
-    }
+    },
+    owner: { type: String, default: '' },
+    companies: { type: [String], default: [] },
   }));
 }
 

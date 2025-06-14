@@ -604,4 +604,37 @@ profileRoutes.post('/removeUserPhoto', async (req, res) => {
   }
 });
 
+profileRoutes.post('/createNewCompany', async (req, res) => {
+  const { _id, title, city, country, district, address } = req.body;
+
+  try {
+    // Создание новой "компании" (в твоём случае это просто новый пользователь)
+    const newCompany = new User({
+      accType: 'Компания', // если нужно обозначить тип
+      title,
+      city,
+      country,
+      district,
+      address,
+      owner: _id
+    });
+
+    await newCompany.save();
+
+    // Добавляем ID компании в поле companies у пользователя-создателя
+    await User.findByIdAndUpdate(_id, {
+      $push: { companies: newCompany._id.toString() }
+    });
+
+    res.status(200).json({
+      message: 'Компания успешно создана',
+      companyId: newCompany._id
+    });
+
+  } catch (error) {
+    console.error('Ошибка при создании компании:', error);
+    return res.status(500).json({ message: 'Ошибка при создании компании' });
+  }
+});
+
 module.exports = profileRoutes;
